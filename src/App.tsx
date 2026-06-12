@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
+import { characterSheet, compressImage, illustratePage } from "./ai";
 import Builder from "./components/Builder";
 import Home from "./components/Home";
 import ProfileEditor from "./components/ProfileEditor";
 import Reader from "./components/Reader";
 import { newKidProfile, type KidProfile } from "./profile";
-import type { Story } from "./stories";
+import { stories as presetStories, type Story } from "./stories";
 
 const KIDS_KEY = "lhs:kids";
 const ACTIVE_KID_KEY = "lhs:activeKid";
@@ -16,7 +17,7 @@ type View =
   | { screen: "home" }
   | { screen: "profile"; kidId: string | null }
   | { screen: "builder" }
-  | { screen: "reader"; story: Story };
+  | { screen: "reader"; storyId: string };
 
 const loadJson = <T,>(key: string, fallback: T): T => {
   try {
@@ -24,6 +25,14 @@ const loadJson = <T,>(key: string, fallback: T): T => {
     return raw ? (JSON.parse(raw) as T) : fallback;
   } catch {
     return fallback;
+  }
+};
+
+const saveJson = (key: string, value: unknown) => {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // Storage may be full (large illustrated stories) — the app keeps working in memory.
   }
 };
 
@@ -48,21 +57,15 @@ function App() {
   const [myStories, setMyStories] = useState<Story[]>(() => loadJson(MY_STORIES_KEY, []));
   const [view, setView] = useState<View>({ screen: "home" });
 
-  useEffect(() => {
-    localStorage.setItem(KIDS_KEY, JSON.stringify(kids));
-  }, [kids]);
+  useEffect(() => saveJson(KIDS_KEY, kids), [kids]);
 
   useEffect(() => {
     if (activeKidId) localStorage.setItem(ACTIVE_KID_KEY, activeKidId);
   }, [activeKidId]);
 
-  useEffect(() => {
-    localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites));
-  }, [favorites]);
+  useEffect(() => saveJson(FAVORITES_KEY, favorites), [favorites]);
 
-  useEffect(() => {
-    localStorage.setItem(MY_STORIES_KEY, JSON.stringify(myStories));
-  }, [myStories]);
+  useEffect(() => saveJson(MY_STORIES_KEY, myStories), [myStories]);
 
   const activeKid = kids.find((kid) => kid.id === activeKidId) ?? kids[0] ?? null;
 
@@ -96,14 +99,53 @@ function App() {
     );
   };
 
+  const setPageImage = (storyId: string, pageIndex: number, image: string) => {
+    setMyStories((current) =>
+      current.map((story) =>
+        story.id === storyId
+          ? {
+              ...story,
+              pages: story.pages.map((page, index) =>
+                index === pageIndex ? { ...page, image } : page,
+              ),
+            }
+          : story,
+      ),
+    );
+  };
+
+  /** Paints AI story pages one by one; the reader updates live as images land. */
+  const illustrateStory = async (story: Story, profile: KidProfile | null) => {
+    const character = characterSheet(profile);
+    for (let index = 0; index < story.pages.length; index += 1) {
+      const scene = story.pages[index].illustration;
+      if (!scene) continue;
+      const image = await illustratePage(scene, character);
+      if (image) {
+        const compressed = await compressImage(image);
+        setPageImage(story.id, index, compressed);
+      }
+    }
+  };
+
   const createStory = (story: Story) => {
     setMyStories((current) => [story, ...current]);
-    goTo({ screen: "reader", story });
+    goTo({ screen: "reader", storyId: story.id });
+    if (story.pages.some((page) => page.illustration)) {
+      void illustrateStory(story, activeKid);
+    }
   };
 
   const deleteStory = (storyId: string) => {
     setMyStories((current) => current.filter((story) => story.id !== storyId));
   };
+
+  const readerStory =
+    view.screen === "reader"
+      ? (myStories.find((story) => story.id === view.storyId) ??
+        presetStories.find((story) => story.id === view.storyId) ??
+        null)
+      : null;
 
   return (
     <main className="app">
@@ -118,7 +160,7 @@ function App() {
           onToggleFavorite={toggleFavorite}
           myStories={myStories}
           onDeleteStory={deleteStory}
-          onOpenStory={(story) => goTo({ screen: "reader", story })}
+          onOpenStory={(story) => goTo({ screen: "reader", storyId: story.id })}
           onBuildStory={() => goTo({ screen: "builder" })}
         />
       )}
@@ -141,9 +183,9 @@ function App() {
         />
       )}
 
-      {view.screen === "reader" && (
+      {view.screen === "reader" && readerStory && (
         <Reader
-          story={view.story}
+          story={readerStory}
           profile={activeKid}
           onExit={() => goTo({ screen: "home" })}
         />

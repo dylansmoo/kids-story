@@ -19,12 +19,29 @@ them page by page. Built to start small, then add features along the way.
 - No accounts, no tracking; everything is stored locally on the device.
 - Classic, wholesome, family-friendly content; no pronoun questions.
 
+## AI story magic
+
+The builder first tries real AI generation through two Vercel serverless functions:
+
+- `api/story.ts` — GPT-4o-mini writes a 7-page personalized story from the builder selections.
+  Wholesome-content guardrails are baked into the system prompt: classic family-friendly
+  storytelling, no politics or ideology, no pronouns for the child, nothing scary.
+- `api/illustration.ts` — gpt-image-1 (DALL-E 3 fallback) paints each page in a consistent
+  watercolor picture-book style, using a character sheet built from the kid profile so the hero
+  looks the same on every page. Illustrations stream in while reading.
+
+If the API isn't configured or reachable, the builder falls back to instant template stories,
+so the app always works.
+
+**Setup**: add an `OPENAI_API_KEY` environment variable to the Vercel project
+(Settings → Environment Variables) and redeploy. Approximate cost per illustrated story:
+under $0.10 with gpt-image-1 low quality.
+
 ## Planned next
 
-- LLM story generation behind the same builder inputs, with parent-set guardrails
-- Per-page illustration generation using the consistent avatar character
 - Audio read-along
 - More stories, themes, and seasonal packs
+- Accounts and cloud-saved stories
 
 ## Run locally
 

@@ -50,7 +50,16 @@ function Reader({ story, profile, onExit }: ReaderProps) {
         {current ? (
           <div className="reader-page">
             <div className="reader-illustration" aria-hidden="true">
-              <span className="scene-emoji">{current.emoji}</span>
+              {current.image ? (
+                <img className="scene-img" src={current.image} alt="" />
+              ) : (
+                <>
+                  <span className="scene-emoji">{current.emoji}</span>
+                  {current.illustration && (
+                    <span className="painting-note">{"\u{1F3A8}"} painting this page...</span>
+                  )}
+                </>
+              )}
               {profile && (
                 <span className="scene-avatar">
                   <Avatar profile={profile} size={84} />
@@ -129,7 +138,11 @@ function Reader({ story, profile, onExit }: ReaderProps) {
         </div>
         {story.pages.map((storyPage, index) => (
           <div className="print-page" key={index}>
-            <div className="print-page-emoji">{storyPage.emoji}</div>
+            {storyPage.image ? (
+              <img className="print-page-img" src={storyPage.image} alt="" />
+            ) : (
+              <div className="print-page-emoji">{storyPage.emoji}</div>
+            )}
             <p className="print-page-text">{personalize(storyPage.text, name)}</p>
             <p className="print-page-aloud">Say it together: &ldquo;{personalize(storyPage.readAloud, name)}&rdquo;</p>
             <span className="print-page-number">{index + 1}</span>

@@ -5,6 +5,10 @@ export interface StoryPage {
   readAloud: string;
   /** Scene emoji used as the page illustration placeholder. */
   emoji: string;
+  /** Scene description for the image model (AI-generated stories only). */
+  illustration?: string;
+  /** Generated illustration as a data URL, filled in as images finish painting. */
+  image?: string;
 }
 
 export interface Story {
