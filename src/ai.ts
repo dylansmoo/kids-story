@@ -6,6 +6,7 @@ import {
   lengthOptions,
   lessonOptions,
   placeOptions,
+  resolveArtStyle,
   themeOptions,
   type StorySetup,
 } from "./storyBuilder";
@@ -66,6 +67,17 @@ export const generateAiStory = async (
   const heroNames = joinNames(heroes.map((kid) => kid.name));
   const petName = setup.companionName.trim();
 
+  const companionPhrase =
+    companion.id === "custom"
+      ? setup.companionCustom.trim().replace(/^(a|an|the)\s+/i, "")
+      : companion.phrase;
+  const placePhrase =
+    place.id === "custom" ? setup.placeCustom.trim() || "a wonderful place" : place.phrase;
+  const lessonText =
+    lesson.id === "custom"
+      ? setup.lessonCustom.trim() || "kindness"
+      : lesson.label.toLowerCase();
+
   const response = await fetch("/api/story", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -79,13 +91,13 @@ export const generateAiStory = async (
       setup: {
         theme: theme.label,
         companion:
-          companion.id === "none"
+          companion.id === "none" || !companionPhrase
             ? ""
             : petName
-              ? `${companion.phrase} named ${petName}`
-              : companion.phrase,
-        place: place.phrase,
-        lesson: lesson.label.toLowerCase(),
+              ? `${companionPhrase} named ${petName}`
+              : companionPhrase,
+        place: placePhrase,
+        lesson: lessonText,
         pageCount: length.pages,
         wordsPerPage: length.wordsPerPage,
         minutes: length.minutes,
@@ -117,17 +129,15 @@ export const generateAiStory = async (
   return {
     id: `my-${Date.now()}`,
     title: data.title,
-    subtitle:
-      data.subtitle ||
-      (companion.id === "none"
-        ? `A ${lesson.label.toLowerCase()} story`
-        : `A ${lesson.label.toLowerCase()} story with a ${companion.label.toLowerCase()}`),
+    subtitle: data.subtitle || `A story about ${lessonText}`,
     theme: theme.label,
     accent: theme.accent,
-    emoji: companion.id === "none" ? theme.emoji : companion.emoji,
+    emoji:
+      companion.id === "none" || companion.id === "custom" ? theme.emoji : companion.emoji,
     minutes: length.minutes,
     heroName: heroNames || undefined,
     kidIds: heroes.map((kid) => kid.id),
+    artStyle: resolveArtStyle(setup, heroes[0] ?? null),
     pages: data.pages.map((page, index) => ({
       text: page.text,
       readAloud: page.readAloud,

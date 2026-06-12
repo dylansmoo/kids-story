@@ -24,6 +24,8 @@ export interface Story {
   heroName?: string;
   /** Profile ids of the kids starring in this story. */
   kidIds?: string[];
+  /** Illustration style prompt chosen for this story. */
+  artStyle?: string;
 }
 
 /** Used when no hero name has been set. Reads naturally anywhere a name appears. */
@@ -38,7 +40,7 @@ export const stories: Story[] = [
     title: "The Brave Little Explorer",
     subtitle: "A backyard adventure about being brave",
     theme: "Bravery",
-    accent: "#ec7d35",
+    accent: "#f4724b",
     emoji: "\u{1F9ED}",
     minutes: 3,
     pages: [
@@ -130,7 +132,7 @@ export const stories: Story[] = [
     title: "Goodnight, Sleepy Moon",
     subtitle: "A calm story for bedtime",
     theme: "Bedtime",
-    accent: "#8a7fc4",
+    accent: "#8b7fd4",
     emoji: "\u{1F319}",
     minutes: 2,
     pages: [
@@ -171,7 +173,7 @@ export const stories: Story[] = [
     title: "The Great Pancake Picnic",
     subtitle: "A yummy story about sharing",
     theme: "Sharing",
-    accent: "#d96aa0",
+    accent: "#c75fa8",
     emoji: "\u{1F95E}",
     minutes: 3,
     pages: [
@@ -217,7 +219,7 @@ export const stories: Story[] = [
     title: "Captain {name} and the Cardboard Ship",
     subtitle: "An imagination adventure in the living room",
     theme: "Imagination",
-    accent: "#3da18a",
+    accent: "#2fa897",
     emoji: "\u{26F5}",
     minutes: 3,
     pages: [
@@ -263,7 +265,7 @@ export const stories: Story[] = [
     title: "The Big Helper Day",
     subtitle: "A proud story about being responsible",
     theme: "Helping",
-    accent: "#b5533c",
+    accent: "#c7694f",
     emoji: "\u{1F9FA}",
     minutes: 3,
     pages: [
