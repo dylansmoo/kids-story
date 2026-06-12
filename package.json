@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "description": "MVP for a parent-guided kids story builder.",
   "private": true,
-  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
