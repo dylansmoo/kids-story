@@ -10,13 +10,29 @@ import {
   type StorySetup,
 } from "./storyBuilder";
 
+/** Fixed outfit per kid (picked from their id) so illustrations stay consistent. */
+const OUTFITS = [
+  "a red t-shirt and blue dungarees",
+  "a sunny yellow t-shirt and green shorts",
+  "a striped blue-and-white jumper and grey trousers",
+  "a purple hoodie and orange trousers",
+  "a teal t-shirt and rainbow-striped leggings",
+  "a green dinosaur t-shirt and brown shorts",
+];
+
+const outfitOf = (profile: KidProfile): string => {
+  let hash = 0;
+  for (const char of profile.id) hash = (hash + char.charCodeAt(0)) % OUTFITS.length;
+  return OUTFITS[hash];
+};
+
 const describeKid = (profile: KidProfile): string => {
   const skin = (skinTones.find((tone) => tone.id === profile.skinTone) ?? skinTones[1]).label;
   const kidWord = profile.gender === "boy" || profile.gender === "girl" ? profile.gender : "child";
   const glasses = profile.glasses ? ", wearing round glasses" : "";
   return `a ${profile.age || "5"}-year-old ${kidWord} with ${skin.toLowerCase()} skin and ${hairWordOf(
     profile,
-  )} ${profile.hairStyle} hair${glasses}`;
+  )} ${profile.hairStyle} hair${glasses}, dressed in ${outfitOf(profile)}`;
 };
 
 /** A stable appearance description injected into every illustration prompt. */
@@ -71,6 +87,8 @@ export const generateAiStory = async (
         place: place.phrase,
         lesson: lesson.label.toLowerCase(),
         pageCount: length.pages,
+        wordsPerPage: length.wordsPerPage,
+        minutes: length.minutes,
         extra: setup.extra.trim(),
       },
     }),
@@ -107,7 +125,7 @@ export const generateAiStory = async (
     theme: theme.label,
     accent: theme.accent,
     emoji: companion.id === "none" ? theme.emoji : companion.emoji,
-    minutes: Math.max(2, Math.round(data.pages.length / 2)),
+    minutes: length.minutes,
     heroName: heroNames || undefined,
     kidIds: heroes.map((kid) => kid.id),
     pages: data.pages.map((page, index) => ({

@@ -171,19 +171,43 @@ export const lessonOptions: LessonOption[] = [
     cheer: "Tidy up, tidy up!",
     moral: "Little helpers make a big, happy difference.",
   },
+  {
+    id: "friends",
+    label: "Making friends",
+    emoji: "\u{1F44B}",
+    challenge: () =>
+      "A new face peeked out, looking shy. Making a new friend felt a little wobbly.",
+    choice: "{name} waved and said, \u201CHi! Want to play with us?\u201D Wobbly turned into wonderful.",
+    cheer: "Hi, new friend!",
+    moral: "Saying hello is how every friendship begins.",
+  },
+  {
+    id: "resilience",
+    label: "Bouncing back",
+    emoji: "\u{1F308}",
+    challenge: () =>
+      "Whoops! The plan flopped. For a moment everything felt upside down.",
+    choice:
+      "{name} took a big breath, gave a little shake, and said, \u201CThat's okay. Let's try another way!\u201D",
+    cheer: "Bounce back up!",
+    moral: "When things go wrong, brave hearts bounce back and try another way.",
+  },
 ];
 
 export interface LengthOption {
   id: string;
   label: string;
   emoji: string;
+  /** AI story shape. */
   pages: number;
+  wordsPerPage: number;
+  minutes: number;
 }
 
 export const lengthOptions: LengthOption[] = [
-  { id: "short", label: "Short", emoji: "\u{1F401}", pages: 5 },
-  { id: "medium", label: "Medium", emoji: "\u{1F430}", pages: 7 },
-  { id: "long", label: "Long", emoji: "\u{1F418}", pages: 10 },
+  { id: "short", label: "Short", emoji: "\u{1F401}", pages: 8, wordsPerPage: 55, minutes: 5 },
+  { id: "medium", label: "Medium", emoji: "\u{1F430}", pages: 12, wordsPerPage: 70, minutes: 10 },
+  { id: "long", label: "Long", emoji: "\u{1F418}", pages: 16, wordsPerPage: 80, minutes: 15 },
 ];
 
 export interface StorySetup {
