@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Avatar } from "../Avatar";
 import {
   ages,
-  artStyles,
   genders,
   hairColors,
   hairStyles,
@@ -10,6 +9,7 @@ import {
   skinTones,
   type KidProfile,
 } from "../profile";
+import StylePicker from "./StylePicker";
 
 interface ProfileEditorProps {
   initial: KidProfile | null;
@@ -134,20 +134,7 @@ function ProfileEditor({ initial, canDelete, onSave, onDelete, onCancel }: Profi
           <p className="picker-hint">
             This styles the profile picture and every illustration in the stories.
           </p>
-          <div className="chip-row">
-            {artStyles.map((style) => (
-              <button
-                key={style.id}
-                type="button"
-                className={profile.artStyle === style.id ? "style-pick selected" : "style-pick"}
-                onClick={() => set("artStyle", style.id)}
-                aria-pressed={profile.artStyle === style.id}
-              >
-                <Avatar profile={{ ...profile, artStyle: style.id }} size={56} />
-                <span>{style.label}</span>
-              </button>
-            ))}
-          </div>
+          <StylePicker value={profile.artStyle} onChange={(styleId) => set("artStyle", styleId)} />
 
           <span className="picker-label">Glasses</span>
           <div className="chip-row">

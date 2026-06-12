@@ -7,6 +7,7 @@ import ProfileEditor from "./components/ProfileEditor";
 import Reader from "./components/Reader";
 import { artStyleOf, newKidProfile, type KidProfile } from "./profile";
 import { stories as presetStories, type Story } from "./stories";
+import { supabase } from "./supabase";
 
 const KIDS_KEY = "lhs:kids";
 const ACTIVE_KID_KEY = "lhs:activeKid";
@@ -80,7 +81,34 @@ function App() {
   const signOut = () => {
     localStorage.removeItem(SESSION_KEY);
     setSession(null);
+    if (supabase) void supabase.auth.signOut();
   };
+
+  // Cloud sign-in (Google via Supabase) when configured.
+  useEffect(() => {
+    if (!supabase) return;
+    const client = supabase;
+
+    const applyUser = (email: string | undefined, userId: string | undefined) => {
+      if (!email || !userId) return;
+      signIn(email);
+      void client
+        .from("members")
+        .upsert({ id: userId, email, last_seen_at: new Date().toISOString() });
+    };
+
+    void client.auth.getSession().then(({ data }) => {
+      applyUser(data.session?.user.email ?? undefined, data.session?.user.id);
+    });
+
+    const { data: listener } = client.auth.onAuthStateChange((_event, authSession) => {
+      if (authSession) {
+        applyUser(authSession.user.email ?? undefined, authSession.user.id);
+      }
+    });
+    return () => listener.subscription.unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;

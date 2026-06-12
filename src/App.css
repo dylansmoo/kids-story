@@ -36,7 +36,8 @@ html {
   color: var(--ink);
   background: var(--bg);
   font-family:
-    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    Nunito, ui-rounded, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -637,6 +638,137 @@ button {
   text-align: center;
 }
 
+/* ---------- Wizard ---------- */
+
+.wizard-progress {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--soft);
+  margin-bottom: 28px;
+  overflow: hidden;
+}
+
+.wizard-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--brand), #c75fa8);
+  transition: width 0.3s ease;
+}
+
+.wizard-step {
+  min-height: 320px;
+}
+
+.wizard-heading {
+  margin: 0 0 16px;
+  font-size: clamp(1.5rem, 4vw, 2.1rem);
+  letter-spacing: -0.03em;
+  text-align: center;
+}
+
+.wizard-step .picker-hint {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.wizard-center {
+  justify-content: center;
+}
+
+.wizard-controls {
+  margin-top: 10px;
+}
+
+.wizard-summary {
+  border: 0;
+  box-shadow: none;
+  background: none;
+  padding: 10px 0 0;
+}
+
+.custom-field {
+  max-width: 420px;
+  margin: 16px auto 0;
+}
+
+.custom-row {
+  display: flex;
+  gap: 8px;
+}
+
+.custom-row .hero-input {
+  flex: 1;
+}
+
+.add-confirm {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  min-height: 100%;
+  border: 0;
+  border-radius: 16px;
+  background: var(--brand);
+  color: white;
+  font-size: 1.6rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.add-confirm:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ---------- Style tiles ---------- */
+
+.style-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.style-tile {
+  display: grid;
+  gap: 2px;
+  justify-items: center;
+  border: 3px solid var(--border);
+  border-radius: 18px;
+  background: var(--card);
+  padding: 10px 10px 12px;
+  color: var(--ink);
+  transition:
+    transform 0.12s ease,
+    border-color 0.12s ease;
+}
+
+.style-tile:hover {
+  transform: translateY(-2px);
+}
+
+.style-tile.selected {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 4px rgb(244 114 75 / 16%);
+}
+
+.style-tile img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 12px;
+  margin-bottom: 6px;
+}
+
+.style-tile-label {
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+
+.style-tile-desc {
+  color: var(--faint);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
 .age-gate {
   background: rgb(20 14 8 / 72%);
 }
@@ -1108,6 +1240,23 @@ button {
   margin: 0;
   color: var(--faint);
   font-size: 0.84rem;
+}
+
+.google-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.login-divider {
+  margin: 2px 0;
+  color: var(--faint);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
 }
 
 .signed-in-row {

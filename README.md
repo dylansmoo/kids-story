@@ -37,6 +37,20 @@ so the app always works.
 (Settings → Environment Variables) and redeploy. Approximate cost per illustrated story:
 under $0.10 with gpt-image-1 low quality.
 
+## Cloud accounts (Google login + members database)
+
+Google sign-in and the members table activate when a Supabase project is connected:
+
+1. Create a free project at [supabase.com](https://supabase.com).
+2. In the Supabase dashboard: Authentication → Providers → enable **Google** (follow their
+   Google Cloud OAuth setup), and add your production URL to the redirect allow-list.
+3. Run `supabase/schema.sql` in the SQL Editor to create the `members` table.
+4. Add env vars to Vercel (and `.env.local` for dev):
+   - `VITE_SUPABASE_URL` — the project URL
+   - `VITE_SUPABASE_ANON_KEY` — the anon/public key
+5. Redeploy. The login screen now shows "Continue with Google"; signed-in parents are stored
+   in `members`. Without these vars the app falls back to the on-device email session.
+
 ## Planned next
 
 - Audio read-along
