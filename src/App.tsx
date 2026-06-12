@@ -179,7 +179,8 @@ function App() {
         onClick={() => setTheme((current) => (current === "light" ? "dark" : "light"))}
         aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
       >
-        {theme === "light" ? "\u{1F319}" : "\u{2600}\u{FE0F}"}
+        <span aria-hidden="true">{theme === "light" ? "\u{1F319}" : "\u{2600}\u{FE0F}"}</span>
+        <span className="theme-toggle-label">{theme === "light" ? "Dark" : "Light"}</span>
       </button>
 
       {view.screen === "home" && (

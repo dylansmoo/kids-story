@@ -223,7 +223,9 @@ function Builder({ kids, activeKid, onCreate, onBack }: BuilderProps) {
             >
               <span className="big-chip-emoji">{option.emoji}</span>
               <span>{option.label}</span>
-              <span className="big-chip-sub">{option.pages} pages</span>
+              <span className="big-chip-sub">
+                &asymp; {option.minutes} min &middot; {option.pages} pages
+              </span>
             </button>
           ))}
         </div>
@@ -231,17 +233,20 @@ function Builder({ kids, activeKid, onCreate, onBack }: BuilderProps) {
 
       <section className="builder-section">
         <h2 className="picker-heading">
-          Anything else to include? <span className="optional-tag">optional</span>
+          Your plot idea or extra details <span className="optional-tag">optional</span>
         </h2>
         <textarea
           className="extra-input"
           value={setup.extra}
           onChange={(event) => set("extra", event.target.value)}
-          placeholder="e.g. They love pancakes, grandma is visiting, the puppy lost its ball..."
+          placeholder="e.g. A treasure hunt for grandma's birthday. They love pancakes. Please avoid mentioning storms."
           rows={3}
           maxLength={500}
         />
-        <p className="picker-hint">Used in magic stories. Content rules always apply.</p>
+        <p className="picker-hint">
+          A plot, favourite things, or anything to avoid. Used in magic stories; content rules
+          always apply.
+        </p>
       </section>
 
       <div className="builder-summary">
