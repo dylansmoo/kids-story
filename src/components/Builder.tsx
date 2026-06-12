@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { generateAiStory } from "../ai";
 import { Avatar } from "../Avatar";
 import { artStyleOf, type KidProfile } from "../profile";
@@ -54,7 +54,7 @@ const funFacts = [
   "Sloths can take a whole month to finish one leaf lunch.",
 ];
 
-function LoadingOverlay() {
+function LoadingOverlay({ onCancel }: { onCancel: () => void }) {
   const [messageIndex, setMessageIndex] = useState(0);
   const [factIndex, setFactIndex] = useState(() => Math.floor(Math.random() * funFacts.length));
 
@@ -85,6 +85,9 @@ function LoadingOverlay() {
           <span className="fun-fact-label">Did you know?</span>
           <p className="fun-fact-text">{funFacts[factIndex]}</p>
         </div>
+        <button type="button" className="nav-button cancel-gen" onClick={onCancel}>
+          Cancel
+        </button>
       </div>
     </div>
   );
@@ -208,16 +211,27 @@ function Builder({ kids, activeKid, onCreate, onBack }: BuilderProps) {
   const lesson = lessonOptions.find((option) => option.id === setup.lessonId) ?? lessonOptions[0];
   const length = lengthOptions.find((option) => option.id === setup.lengthId) ?? lengthOptions[1];
 
+  const abortRef = useRef<AbortController | null>(null);
+
   const makeStory = async () => {
     setLoading(true);
     setAiFailed(false);
+    const controller = new AbortController();
+    abortRef.current = controller;
     try {
-      const story = await generateAiStory(setup, heroes);
+      const story = await generateAiStory(setup, heroes, controller.signal);
       onCreate(story);
-    } catch {
+    } catch (error) {
       setLoading(false);
-      setAiFailed(true);
+      // User cancellation isn't a failure — just return to the review step.
+      if (!(error instanceof DOMException && error.name === "AbortError")) {
+        setAiFailed(true);
+      }
     }
+  };
+
+  const cancelGeneration = () => {
+    abortRef.current?.abort();
   };
 
   const starring = heroes.length > 0 ? joinNames(heroes.map((kid) => kid.name)) : "Little Hero";
@@ -555,7 +569,7 @@ function Builder({ kids, activeKid, onCreate, onBack }: BuilderProps) {
         </div>
       )}
 
-      {loading && <LoadingOverlay />}
+      {loading && <LoadingOverlay onCancel={cancelGeneration} />}
     </div>
   );
 }

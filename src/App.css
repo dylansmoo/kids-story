@@ -903,6 +903,7 @@ button {
 }
 
 .reader-page {
+  position: relative;
   display: grid;
   gap: 22px;
   border: 1px solid var(--border);
@@ -934,6 +935,30 @@ button {
   margin: 0 auto;
   object-fit: contain;
   border-radius: 22px;
+}
+
+.narrate-button {
+  position: absolute;
+  top: clamp(34px, 6vw, 60px);
+  right: clamp(34px, 6vw, 60px);
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card);
+  font-size: 1.35rem;
+  box-shadow: var(--shadow);
+}
+
+.narrate-button:disabled {
+  opacity: 0.6;
+}
+
+.cancel-gen {
+  margin-top: 12px;
 }
 
 .painting-note {
