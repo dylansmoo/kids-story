@@ -4,7 +4,7 @@ import Builder from "./components/Builder";
 import Home from "./components/Home";
 import ProfileEditor from "./components/ProfileEditor";
 import Reader from "./components/Reader";
-import { newKidProfile, type KidProfile } from "./profile";
+import { artStyleOf, newKidProfile, type KidProfile } from "./profile";
 import { stories as presetStories, type Story } from "./stories";
 
 const KIDS_KEY = "lhs:kids";
@@ -12,6 +12,7 @@ const ACTIVE_KID_KEY = "lhs:activeKid";
 const FAVORITES_KEY = "lhs:favorites";
 const MY_STORIES_KEY = "lhs:myStories";
 const LEGACY_NAME_KEY = "lhs:heroName";
+const THEME_KEY = "lhs:theme";
 
 type View =
   | { screen: "home" }
@@ -38,7 +39,10 @@ const saveJson = (key: string, value: unknown) => {
 
 const loadKids = (): KidProfile[] => {
   const kids = loadJson<KidProfile[]>(KIDS_KEY, []);
-  if (kids.length > 0) return kids;
+  if (kids.length > 0) {
+    // Fill in any fields added since the profile was saved.
+    return kids.map((kid) => ({ ...newKidProfile(), ...kid }));
+  }
 
   // Migrate the old single hero-name setup into a first kid profile.
   const legacyName = localStorage.getItem(LEGACY_NAME_KEY)?.trim();
@@ -56,6 +60,14 @@ function App() {
   const [favorites, setFavorites] = useState<string[]>(() => loadJson(FAVORITES_KEY, []));
   const [myStories, setMyStories] = useState<Story[]>(() => loadJson(MY_STORIES_KEY, []));
   const [view, setView] = useState<View>({ screen: "home" });
+  const [theme, setTheme] = useState<"light" | "dark">(() =>
+    localStorage.getItem(THEME_KEY) === "dark" ? "dark" : "light",
+  );
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    localStorage.setItem(THEME_KEY, theme);
+  }, [theme]);
 
   useEffect(() => saveJson(KIDS_KEY, kids), [kids]);
 
@@ -117,10 +129,11 @@ function App() {
   /** Paints AI story pages one by one; the reader updates live as images land. */
   const illustrateStory = async (story: Story, profile: KidProfile | null) => {
     const character = characterSheet(profile);
+    const style = artStyleOf(profile).prompt;
     for (let index = 0; index < story.pages.length; index += 1) {
       const scene = story.pages[index].illustration;
       if (!scene) continue;
-      const image = await illustratePage(scene, character);
+      const image = await illustratePage(scene, character, style);
       if (image) {
         const compressed = await compressImage(image);
         setPageImage(story.id, index, compressed);
@@ -149,6 +162,15 @@ function App() {
 
   return (
     <main className="app">
+      <button
+        type="button"
+        className="theme-toggle no-print"
+        onClick={() => setTheme((current) => (current === "light" ? "dark" : "light"))}
+        aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
+      >
+        {theme === "light" ? "\u{1F319}" : "\u{2600}\u{FE0F}"}
+      </button>
+
       {view.screen === "home" && (
         <Home
           kids={kids}

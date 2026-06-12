@@ -1,7 +1,8 @@
-import { hairWordOf, kidWordOf, skinTones, type KidProfile } from "./profile";
+import { artStyleOf, hairWordOf, kidWordOf, skinTones, type KidProfile } from "./profile";
 import type { Story } from "./stories";
 import {
   companionOptions,
+  lengthOptions,
   lessonOptions,
   placeOptions,
   themeOptions,
@@ -31,6 +32,7 @@ export const generateAiStory = async (
   const companion = pick(companionOptions, setup.companionId);
   const place = pick(placeOptions, setup.placeId);
   const lesson = pick(lessonOptions, setup.lessonId);
+  const length = pick(lengthOptions, setup.lengthId);
 
   const response = await fetch("/api/story", {
     method: "POST",
@@ -46,6 +48,7 @@ export const generateAiStory = async (
         companion: companion.phrase,
         place: place.phrase,
         lesson: lesson.label.toLowerCase(),
+        pageCount: length.pages,
       },
     }),
   });
@@ -77,7 +80,7 @@ export const generateAiStory = async (
     theme: theme.label,
     accent: theme.accent,
     emoji: companion.emoji,
-    minutes: 3,
+    minutes: Math.max(2, Math.round(data.pages.length / 2)),
     heroName: profile?.name?.trim() || undefined,
     pages: data.pages.map((page, index) => ({
       text: page.text,
@@ -92,12 +95,13 @@ export const generateAiStory = async (
 export const illustratePage = async (
   scene: string,
   character: string,
+  style: string,
 ): Promise<string | null> => {
   try {
     const response = await fetch("/api/illustration", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ scene, character }),
+      body: JSON.stringify({ scene, character, style }),
     });
     if (!response.ok) return null;
     const data = (await response.json()) as { image?: string };

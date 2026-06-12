@@ -16,11 +16,19 @@ Output rules:
 - Write the literal token {name} (curly braces included) every single time the child's name would appear, in the title and pages. Never write the real name.
 - Respond with only a JSON object in exactly this shape:
 {"title": string, "subtitle": string, "pages": [{"text": string, "readAloud": string, "illustration": string}]}
-- Exactly 7 pages.
-- "text": 2-3 short sentences of story.
 - "readAloud": a 2-6 word line a child can shout along with.
 - "illustration": a simple visual description of the scene for an illustrator. Describe the child as "the child" and what they are doing. No names, no text in the scene.
-- Story arc: page 1 sets off, pages 2-3 explore and play, page 4 a gentle challenge appears, page 5 the child makes the good choice, page 6 joyful resolution, page 7 cozy ending that states the lesson in one warm line.`;
+- Story arc: page 1 sets off, the middle pages explore and play, then a gentle challenge appears about two-thirds through, the child makes the good choice, joyful resolution, and the final page is a cozy ending that states the lesson in one warm line.`;
+
+const languageForAge = (age: number): string => {
+  if (age <= 3) {
+    return "Toddler language: 1-2 tiny sentences per page, each under 8 words. Lots of sounds, animal noises, and repeated phrases.";
+  }
+  if (age <= 5) {
+    return "Preschool language: 2-3 short sentences per page, each under 12 words. Simple everyday words, playful rhythm, repeated phrases to join in on.";
+  }
+  return "Early-reader language: 2-4 sentences per page, up to 15 words each. Mostly simple words with a couple of fun bigger words a 6-8 year old can sound out.";
+};
 
 export interface StoryRequestBody {
   kid?: {
@@ -33,6 +41,7 @@ export interface StoryRequestBody {
     companion?: string;
     place?: string;
     lesson?: string;
+    pageCount?: number;
   };
 }
 
@@ -51,10 +60,16 @@ export const createStory = async (
     ? `The child is a ${kid.gender}; natural matching pronouns and the word "${kid.gender}" are fine.`
     : "The child's boy/girl word was not given: use no pronouns and no gendered words for the child.";
 
-  const userPrompt = `Child: {name}, age ${kid.age ?? "5"}. Appearance: ${
+  const age = Math.max(1, Math.min(10, Number(kid.age) || 5));
+  const pageCount = Math.max(4, Math.min(12, Number(setup.pageCount) || 7));
+
+  const userPrompt = `Child: {name}, age ${age}. Appearance: ${
     kid.description ?? "a young child"
   }. You may weave one or two appearance details in naturally.
 ${genderLine}
+
+Write exactly ${pageCount} pages.
+Language level for this age: ${languageForAge(age)}
 
 Story type: ${setup.theme}.
 Companion character: a ${setup.companion}.
@@ -101,7 +116,7 @@ Lesson the child gently learns: ${setup.lesson}.`;
     if (
       typeof story.title !== "string" ||
       !Array.isArray(story.pages) ||
-      story.pages.length < 5 ||
+      story.pages.length < 4 ||
       story.pages.some((page) => typeof page.text !== "string")
     ) {
       return { status: 502, body: { error: "bad_generation" } };
@@ -134,6 +149,8 @@ const SAFETY =
 export interface IllustrationRequestBody {
   scene?: string;
   character?: string;
+  /** Art style sentence chosen on the kid's profile. */
+  style?: string;
 }
 
 const generateImage = async (
@@ -180,7 +197,7 @@ export const createIllustration = async (
     return { status: 400, body: { error: "missing_scene" } };
   }
 
-  const prompt = `${STYLE}. The main character: ${
+  const prompt = `${body.style?.trim() || STYLE}. The main character: ${
     body.character ?? "a happy young child"
   }. Scene: ${body.scene}. ${SAFETY}`;
 

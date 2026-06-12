@@ -7,6 +7,7 @@ import {
   buildStory,
   companionOptions,
   defaultSetup,
+  lengthOptions,
   lessonOptions,
   placeOptions,
   themeOptions,
@@ -76,6 +77,7 @@ function Builder({ profile, onCreate, onBack }: BuilderProps) {
     companionOptions.find((option) => option.id === setup.companionId) ?? companionOptions[0];
   const place = placeOptions.find((option) => option.id === setup.placeId) ?? placeOptions[0];
   const lesson = lessonOptions.find((option) => option.id === setup.lessonId) ?? lessonOptions[0];
+  const length = lengthOptions.find((option) => option.id === setup.lengthId) ?? lengthOptions[1];
 
   return (
     <div className="builder" style={{ ["--accent" as string]: theme.accent }}>
@@ -159,9 +161,29 @@ function Builder({ profile, onCreate, onBack }: BuilderProps) {
         </div>
       </section>
 
+      <section className="builder-section">
+        <h2 className="picker-heading">How long a story?</h2>
+        <div className="chip-grid">
+          {lengthOptions.map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              className={setup.lengthId === option.id ? "big-chip selected" : "big-chip"}
+              onClick={() => set("lengthId", option.id)}
+              aria-pressed={setup.lengthId === option.id}
+            >
+              <span className="big-chip-emoji">{option.emoji}</span>
+              <span>{option.label}</span>
+              <span className="big-chip-sub">{option.pages} pages</span>
+            </button>
+          ))}
+        </div>
+      </section>
+
       <div className="builder-summary">
         <p>
-          A <strong>{theme.label.toLowerCase()}</strong> at{" "}
+          A <strong>{length.label.toLowerCase()}</strong>{" "}
+          <strong>{theme.label.toLowerCase()}</strong> at{" "}
           <strong>{place.label.toLowerCase()}</strong> with a{" "}
           <strong>{companion.label.toLowerCase()}</strong>, about{" "}
           <strong>{lesson.label.toLowerCase()}</strong> &mdash; starring{" "}

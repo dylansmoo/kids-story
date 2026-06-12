@@ -164,11 +164,25 @@ export const lessonOptions: LessonOption[] = [
   },
 ];
 
+export interface LengthOption {
+  id: string;
+  label: string;
+  emoji: string;
+  pages: number;
+}
+
+export const lengthOptions: LengthOption[] = [
+  { id: "short", label: "Short", emoji: "\u{1F401}", pages: 5 },
+  { id: "medium", label: "Medium", emoji: "\u{1F430}", pages: 7 },
+  { id: "long", label: "Long", emoji: "\u{1F418}", pages: 10 },
+];
+
 export interface StorySetup {
   themeId: string;
   companionId: string;
   placeId: string;
   lessonId: string;
+  lengthId: string;
 }
 
 export const defaultSetup: StorySetup = {
@@ -176,6 +190,7 @@ export const defaultSetup: StorySetup = {
   companionId: companionOptions[0].id,
   placeId: placeOptions[0].id,
   lessonId: lessonOptions[0].id,
+  lengthId: lengthOptions[1].id,
 };
 
 const cap = (text: string): string => text.charAt(0).toUpperCase() + text.slice(1);
@@ -230,39 +245,78 @@ export const buildStory = (setup: StorySetup, profile: KidProfile | null): Story
       title = `{name} and the ${place.label} Adventure`;
   }
 
-  const pages: StoryPage[] = [
-    { text: opener, readAloud: openCheer, emoji: theme.emoji },
-    {
-      text: `${cap(place.phrase)} was wonderful. ${place.sight}`,
-      readAloud: "Wow!",
-      emoji: place.emoji,
-    },
-    {
-      text: `The ${companion.phrase} ${companion.antic}. {name} laughed, patted down ${hairWord} hair,${glassesBit} and clapped along.`,
-      readAloud: "Ha ha ha!",
-      emoji: companion.emoji,
-    },
-    {
-      text: lesson.challenge(companion.phrase),
-      readAloud: "Uh oh!",
-      emoji: "\u{1F62E}",
-    },
-    {
-      text: lesson.choice,
-      readAloud: lesson.cheer,
-      emoji: lesson.emoji,
-    },
-    {
-      text: `And just like that, everything was better than before. The ${companion.phrase} did a happy dance around {name}.`,
-      readAloud: "Hooray!",
-      emoji: "\u{1F389}",
-    },
-    {
-      text: ending,
-      readAloud: "The end!",
-      emoji: endEmoji,
-    },
-  ];
+  const length = pick(lengthOptions, setup.lengthId);
+
+  const openerPage: StoryPage = { text: opener, readAloud: openCheer, emoji: theme.emoji };
+  const sightPage: StoryPage = {
+    text: `${cap(place.phrase)} was wonderful. ${place.sight}`,
+    readAloud: "Wow!",
+    emoji: place.emoji,
+  };
+  const anticPage: StoryPage = {
+    text: `The ${companion.phrase} ${companion.antic}. {name} laughed, patted down ${hairWord} hair,${glassesBit} and clapped along.`,
+    readAloud: "Ha ha ha!",
+    emoji: companion.emoji,
+  };
+  const challengePage: StoryPage = {
+    text: lesson.challenge(companion.phrase),
+    readAloud: "Uh oh!",
+    emoji: "\u{1F62E}",
+  };
+  const choicePage: StoryPage = {
+    text: lesson.choice,
+    readAloud: lesson.cheer,
+    emoji: lesson.emoji,
+  };
+  const resolutionPage: StoryPage = {
+    text: `And just like that, everything was better than before. The ${companion.phrase} did a happy dance around {name}.`,
+    readAloud: "Hooray!",
+    emoji: "\u{1F389}",
+  };
+  const endingPage: StoryPage = { text: ending, readAloud: "The end!", emoji: endEmoji };
+
+  // Extra pages used only for long stories.
+  const peekabooPage: StoryPage = {
+    text: `{name} and the ${companion.phrase} played peek-a-boo behind the biggest thing they could find. Found you! Found you!`,
+    readAloud: "Peek-a-boo!",
+    emoji: "\u{1F648}",
+  };
+  const restPage: StoryPage = {
+    text: `Then it was time for a tiny rest. The ${companion.phrase} snuggled up close, and {name} hummed a quiet song.`,
+    readAloud: "Snuggle time!",
+    emoji: "\u{1F60A}",
+  };
+  const songPage: StoryPage = {
+    text: `All the way back, {name} and the ${companion.phrase} sang a happy little song. La la la, what a day!`,
+    readAloud: "La la la!",
+    emoji: "\u{1F3B6}",
+  };
+
+  const pages: StoryPage[] =
+    length.id === "short"
+      ? [openerPage, anticPage, challengePage, choicePage, endingPage]
+      : length.id === "long"
+        ? [
+            openerPage,
+            sightPage,
+            peekabooPage,
+            anticPage,
+            restPage,
+            challengePage,
+            choicePage,
+            resolutionPage,
+            songPage,
+            endingPage,
+          ]
+        : [
+            openerPage,
+            sightPage,
+            anticPage,
+            challengePage,
+            choicePage,
+            resolutionPage,
+            endingPage,
+          ];
 
   return {
     id: `my-${Date.now()}`,
@@ -271,7 +325,7 @@ export const buildStory = (setup: StorySetup, profile: KidProfile | null): Story
     theme: theme.label,
     accent: theme.accent,
     emoji: companion.emoji,
-    minutes: 3,
+    minutes: Math.max(2, Math.round(pages.length / 2)),
     pages,
     heroName: profile?.name?.trim() || undefined,
   };

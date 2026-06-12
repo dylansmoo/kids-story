@@ -7,7 +7,57 @@ export interface KidProfile {
   hairColor: string;
   hairStyle: string;
   glasses: boolean;
+  /** Art style for the profile picture and story illustrations. */
+  artStyle: string;
 }
+
+export interface ArtStyleOption {
+  id: string;
+  label: string;
+  /** Style sentence used in illustration prompts. */
+  prompt: string;
+  /** Avatar frame colors. */
+  frame: string;
+  frameDark: string;
+}
+
+export const artStyles: ArtStyleOption[] = [
+  {
+    id: "watercolor",
+    label: "Watercolor",
+    prompt:
+      "Soft watercolor children's picture book illustration, warm pastel colors, rounded friendly shapes, gentle storybook light, cozy and cheerful mood",
+    frame: "#fde8cf",
+    frameDark: "#e8b88a",
+  },
+  {
+    id: "crayon",
+    label: "Crayon",
+    prompt:
+      "Children's crayon drawing style, waxy textured strokes, bright happy colors, playful hand-drawn look, cheerful and silly mood",
+    frame: "#fdf3c0",
+    frameDark: "#e8d36a",
+  },
+  {
+    id: "cartoon",
+    label: "Cartoon",
+    prompt:
+      "Bright modern cartoon style for preschoolers, bold clean outlines, vivid cheerful colors, big expressive eyes, fun energetic mood",
+    frame: "#d4ecf7",
+    frameDark: "#7fc4e0",
+  },
+  {
+    id: "papercut",
+    label: "Paper craft",
+    prompt:
+      "Paper cut-out collage illustration style, layered colored paper shapes with soft shadows, handmade craft look, warm and cozy mood",
+    frame: "#e3f0d6",
+    frameDark: "#a3c97f",
+  },
+];
+
+export const artStyleOf = (profile: KidProfile | null): ArtStyleOption =>
+  artStyles.find((style) => style.id === profile?.artStyle) ?? artStyles[0];
 
 export interface ColorOption {
   id: string;
@@ -65,6 +115,7 @@ export const newKidProfile = (): KidProfile => ({
   hairColor: hairColors[1].id,
   hairStyle: hairStyles[0].id,
   glasses: false,
+  artStyle: artStyles[0].id,
 });
 
 export const skinColorOf = (profile: KidProfile): string =>
