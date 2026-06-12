@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { generateAiStory } from "../ai";
 import { Avatar } from "../Avatar";
-import { artStyleOf, artStyles, type KidProfile } from "../profile";
+import { artStyleOf, type KidProfile } from "../profile";
 import type { Story } from "../stories";
 import {
   buildStory,
@@ -14,6 +14,7 @@ import {
   themeOptions,
   type StorySetup,
 } from "../storyBuilder";
+import StylePicker from "./StylePicker";
 
 interface BuilderProps {
   kids: KidProfile[];
@@ -89,17 +90,105 @@ function LoadingOverlay() {
   );
 }
 
+interface CustomInputProps {
+  label: string;
+  value: string;
+  placeholder: string;
+  maxLength?: number;
+  onChange: (value: string) => void;
+  onConfirm: () => void;
+}
+
+/** Text input for "Your own" entries with a confirm (+) button. */
+function CustomInput({ label, value, placeholder, maxLength, onChange, onConfirm }: CustomInputProps) {
+  return (
+    <label className="inline-field custom-field">
+      {label}
+      <span className="custom-row">
+        <input
+          className="hero-input"
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              onConfirm();
+            }
+          }}
+          placeholder={placeholder}
+          maxLength={maxLength ?? 60}
+          autoComplete="off"
+          autoFocus
+        />
+        <button
+          type="button"
+          className="add-confirm"
+          onClick={onConfirm}
+          aria-label="Use this and continue"
+          disabled={value.trim().length === 0}
+        >
+          +
+        </button>
+      </span>
+    </label>
+  );
+}
+
+type StepId =
+  | "heroes"
+  | "theme"
+  | "companion"
+  | "place"
+  | "lesson"
+  | "style"
+  | "length"
+  | "extras"
+  | "review";
+
 function Builder({ kids, activeKid, onCreate, onBack }: BuilderProps) {
   const [setup, setSetup] = useState<StorySetup>(() => ({
     ...defaultSetup,
     artStyleId: artStyleOf(activeKid).id,
   }));
   const [heroIds, setHeroIds] = useState<string[]>(activeKid ? [activeKid.id] : []);
+  const [stepIndex, setStepIndex] = useState(0);
   const [loading, setLoading] = useState(false);
   const [aiFailed, setAiFailed] = useState(false);
 
+  const steps: StepId[] = [
+    ...(kids.length > 0 ? (["heroes"] as StepId[]) : []),
+    "theme",
+    "companion",
+    "place",
+    "lesson",
+    "style",
+    "length",
+    "extras",
+    "review",
+  ];
+  const step = steps[stepIndex];
+
   const set = <K extends keyof StorySetup>(field: K, value: StorySetup[K]) =>
     setSetup((current) => ({ ...current, [field]: value }));
+
+  const goNext = () => {
+    setStepIndex((current) => Math.min(steps.length - 1, current + 1));
+    window.scrollTo({ top: 0 });
+  };
+  const goBack = () => {
+    if (stepIndex === 0) {
+      onBack();
+      return;
+    }
+    setStepIndex((current) => current - 1);
+    window.scrollTo({ top: 0 });
+  };
+
+  /** Select a chip; auto-advance unless it needs extra input. */
+  const choose = <K extends keyof StorySetup>(field: K, value: StorySetup[K], autoNext: boolean) => {
+    set(field, value);
+    if (autoNext) setTimeout(goNext, 260);
+  };
 
   const toggleHero = (kidId: string) =>
     setHeroIds((current) =>
@@ -133,329 +222,338 @@ function Builder({ kids, activeKid, onCreate, onBack }: BuilderProps) {
 
   const starring = heroes.length > 0 ? joinNames(heroes.map((kid) => kid.name)) : "Little Hero";
 
+  const headings: Record<StepId, string> = {
+    heroes: "Who is in this story?",
+    theme: "What kind of story?",
+    companion: "Who comes along?",
+    place: "Where does it happen?",
+    lesson: "What's the lesson?",
+    style: "Pick an illustration style",
+    length: "How long a story?",
+    extras: "Final touches",
+    review: "Ready to make some magic?",
+  };
+
   return (
-    <div className="builder" style={{ ["--accent" as string]: theme.accent }}>
+    <div className="builder wizard" style={{ ["--accent" as string]: theme.accent }}>
       <div className="reader-bar">
-        <button type="button" className="link-button" onClick={onBack}>
+        <button type="button" className="link-button" onClick={goBack}>
           &larr; Back
         </button>
         <span className="reader-title">Build a story</span>
-        <span className="page-count" />
+        <span className="page-count">
+          {stepIndex + 1} / {steps.length}
+        </span>
       </div>
 
-      <p className="picker-hint builder-intro">
-        The options are just ideas to get you started &mdash; pick &ldquo;Your own&rdquo; in any
-        section to write anything you like.
-      </p>
+      <div className="wizard-progress" role="presentation">
+        <div
+          className="wizard-progress-fill"
+          style={{ width: `${((stepIndex + 1) / steps.length) * 100}%` }}
+        />
+      </div>
 
-      {kids.length > 0 && (
-        <section className="builder-section">
-          <h2 className="picker-heading">Who is in this story?</h2>
-          <div className="chip-row">
-            {kids.map((kid) => (
+      <section className="builder-section wizard-step">
+        <h2 className="wizard-heading">{headings[step]}</h2>
+
+        {step === "heroes" && (
+          <>
+            <p className="picker-hint">Tap to add or remove kids. Stories can star siblings together.</p>
+            <div className="chip-row wizard-center">
+              {kids.map((kid) => (
+                <button
+                  key={kid.id}
+                  type="button"
+                  className={heroIds.includes(kid.id) ? "hero-pick selected" : "hero-pick"}
+                  onClick={() => toggleHero(kid.id)}
+                  aria-pressed={heroIds.includes(kid.id)}
+                >
+                  <Avatar profile={kid} size={44} />
+                  <span>{kid.name}</span>
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+
+        {step === "theme" && (
+          <>
+            <p className="picker-hint">The options are just ideas &mdash; pick &ldquo;Your own&rdquo; to write anything.</p>
+            <div className="chip-grid">
+              {themeOptions.map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  className={setup.themeId === option.id ? "big-chip selected" : "big-chip"}
+                  onClick={() => choose("themeId", option.id, option.id !== "custom")}
+                  aria-pressed={setup.themeId === option.id}
+                >
+                  <span className="big-chip-emoji">{option.emoji}</span>
+                  <span>{option.label}</span>
+                </button>
+              ))}
+            </div>
+            {setup.themeId === "custom" && (
+              <CustomInput
+                label="Describe the kind of story"
+                value={setup.themeCustom}
+                placeholder="e.g. a pirate treasure hunt"
+                onChange={(value) => set("themeCustom", value)}
+                onConfirm={goNext}
+              />
+            )}
+          </>
+        )}
+
+        {step === "companion" && (
+          <>
+            <div className="chip-grid">
+              {companionOptions.map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  className={setup.companionId === option.id ? "big-chip selected" : "big-chip"}
+                  onClick={() => set("companionId", option.id)}
+                  aria-pressed={setup.companionId === option.id}
+                >
+                  <span className="big-chip-emoji">{option.emoji}</span>
+                  <span>{option.label}</span>
+                </button>
+              ))}
+            </div>
+            {setup.companionId === "custom" && (
+              <CustomInput
+                label="Describe your companion"
+                value={setup.companionCustom}
+                placeholder="e.g. a rainbow robot dragon"
+                onChange={(value) => set("companionCustom", value)}
+                onConfirm={goNext}
+              />
+            )}
+            {setup.companionId !== "none" && setup.companionId !== "custom" && (
+              <label className="inline-field">
+                Companion's name <span className="optional-tag">optional</span>
+                <input
+                  className="hero-input"
+                  value={setup.companionName}
+                  onChange={(event) => set("companionName", event.target.value)}
+                  placeholder="e.g. your real pet's name"
+                  maxLength={24}
+                  autoComplete="off"
+                />
+              </label>
+            )}
+          </>
+        )}
+
+        {step === "place" && (
+          <>
+            <div className="chip-grid">
+              {placeOptions.map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  className={setup.placeId === option.id ? "big-chip selected" : "big-chip"}
+                  onClick={() => choose("placeId", option.id, option.id !== "custom")}
+                  aria-pressed={setup.placeId === option.id}
+                >
+                  <span className="big-chip-emoji">{option.emoji}</span>
+                  <span>{option.label}</span>
+                </button>
+              ))}
+            </div>
+            {setup.placeId === "custom" && (
+              <CustomInput
+                label="Describe the place"
+                value={setup.placeCustom}
+                placeholder="e.g. grandma's magical garden"
+                onChange={(value) => set("placeCustom", value)}
+                onConfirm={goNext}
+              />
+            )}
+          </>
+        )}
+
+        {step === "lesson" && (
+          <>
+            <div className="chip-grid">
+              {lessonOptions.map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  className={setup.lessonId === option.id ? "big-chip selected" : "big-chip"}
+                  onClick={() => choose("lessonId", option.id, option.id !== "custom")}
+                  aria-pressed={setup.lessonId === option.id}
+                >
+                  <span className="big-chip-emoji">{option.emoji}</span>
+                  <span>{option.label}</span>
+                </button>
+              ))}
+            </div>
+            {setup.lessonId === "custom" && (
+              <CustomInput
+                label="What should the story teach?"
+                value={setup.lessonCustom}
+                placeholder="e.g. being patient while baking"
+                maxLength={80}
+                onChange={(value) => set("lessonCustom", value)}
+                onConfirm={goNext}
+              />
+            )}
+          </>
+        )}
+
+        {step === "style" && (
+          <>
+            <p className="picker-hint">Every page of this story will be painted in this style.</p>
+            <StylePicker
+              value={setup.artStyleId}
+              onChange={(styleId) => choose("artStyleId", styleId, true)}
+            />
+          </>
+        )}
+
+        {step === "length" && (
+          <div className="chip-grid">
+            {lengthOptions.map((option) => (
               <button
-                key={kid.id}
+                key={option.id}
                 type="button"
-                className={heroIds.includes(kid.id) ? "hero-pick selected" : "hero-pick"}
-                onClick={() => toggleHero(kid.id)}
-                aria-pressed={heroIds.includes(kid.id)}
+                className={setup.lengthId === option.id ? "big-chip selected" : "big-chip"}
+                onClick={() => choose("lengthId", option.id, true)}
+                aria-pressed={setup.lengthId === option.id}
               >
-                <Avatar profile={kid} size={44} />
-                <span>{kid.name}</span>
+                <span className="big-chip-emoji">{option.emoji}</span>
+                <span>{option.label}</span>
+                <span className="big-chip-sub">
+                  &asymp; {option.minutes} min &middot; {option.pages} pages
+                </span>
               </button>
             ))}
           </div>
-        </section>
-      )}
-
-      <section className="builder-section">
-        <h2 className="picker-heading">What kind of story?</h2>
-        <div className="chip-grid">
-          {themeOptions.map((option) => (
-            <button
-              key={option.id}
-              type="button"
-              className={setup.themeId === option.id ? "big-chip selected" : "big-chip"}
-              onClick={() => set("themeId", option.id)}
-              aria-pressed={setup.themeId === option.id}
-            >
-              <span className="big-chip-emoji">{option.emoji}</span>
-              <span>{option.label}</span>
-            </button>
-          ))}
-        </div>
-        {setup.themeId === "custom" && (
-          <label className="inline-field">
-            Describe the kind of story
-            <input
-              className="hero-input"
-              value={setup.themeCustom}
-              onChange={(event) => set("themeCustom", event.target.value)}
-              placeholder="e.g. a pirate treasure hunt"
-              maxLength={60}
-              autoComplete="off"
-            />
-          </label>
         )}
-      </section>
 
-      <section className="builder-section">
-        <h2 className="picker-heading">Who comes along?</h2>
-        <div className="chip-grid">
-          {companionOptions.map((option) => (
-            <button
-              key={option.id}
-              type="button"
-              className={setup.companionId === option.id ? "big-chip selected" : "big-chip"}
-              onClick={() => set("companionId", option.id)}
-              aria-pressed={setup.companionId === option.id}
-            >
-              <span className="big-chip-emoji">{option.emoji}</span>
-              <span>{option.label}</span>
-            </button>
-          ))}
-        </div>
-        {setup.companionId === "custom" && (
-          <label className="inline-field">
-            Describe your companion
-            <input
-              className="hero-input"
-              value={setup.companionCustom}
-              onChange={(event) => set("companionCustom", event.target.value)}
-              placeholder="e.g. a rainbow robot dragon"
-              maxLength={60}
-              autoComplete="off"
-            />
-          </label>
-        )}
-        {setup.companionId !== "none" && (
-          <label className="inline-field">
-            Companion's name <span className="optional-tag">optional</span>
-            <input
-              className="hero-input"
-              value={setup.companionName}
-              onChange={(event) => set("companionName", event.target.value)}
-              placeholder="e.g. your real pet's name"
-              maxLength={24}
-              autoComplete="off"
-            />
-          </label>
-        )}
-      </section>
-
-      <section className="builder-section">
-        <h2 className="picker-heading">Where does it happen?</h2>
-        <div className="chip-grid">
-          {placeOptions.map((option) => (
-            <button
-              key={option.id}
-              type="button"
-              className={setup.placeId === option.id ? "big-chip selected" : "big-chip"}
-              onClick={() => set("placeId", option.id)}
-              aria-pressed={setup.placeId === option.id}
-            >
-              <span className="big-chip-emoji">{option.emoji}</span>
-              <span>{option.label}</span>
-            </button>
-          ))}
-        </div>
-        {setup.placeId === "custom" && (
-          <label className="inline-field">
-            Describe the place
-            <input
-              className="hero-input"
-              value={setup.placeCustom}
-              onChange={(event) => set("placeCustom", event.target.value)}
-              placeholder="e.g. grandma's magical garden"
-              maxLength={60}
-              autoComplete="off"
-            />
-          </label>
-        )}
-      </section>
-
-      <section className="builder-section">
-        <h2 className="picker-heading">What's the lesson?</h2>
-        <div className="chip-grid">
-          {lessonOptions.map((option) => (
-            <button
-              key={option.id}
-              type="button"
-              className={setup.lessonId === option.id ? "big-chip selected" : "big-chip"}
-              onClick={() => set("lessonId", option.id)}
-              aria-pressed={setup.lessonId === option.id}
-            >
-              <span className="big-chip-emoji">{option.emoji}</span>
-              <span>{option.label}</span>
-            </button>
-          ))}
-        </div>
-        {setup.lessonId === "custom" && (
-          <label className="inline-field">
-            What should the story teach?
-            <input
-              className="hero-input"
-              value={setup.lessonCustom}
-              onChange={(event) => set("lessonCustom", event.target.value)}
-              placeholder="e.g. being patient while baking"
-              maxLength={80}
-              autoComplete="off"
-            />
-          </label>
-        )}
-      </section>
-
-      <section className="builder-section">
-        <h2 className="picker-heading">Illustration style</h2>
-        <div className="chip-grid">
-          {artStyles.map((style) => (
-            <button
-              key={style.id}
-              type="button"
-              className={setup.artStyleId === style.id ? "big-chip selected" : "big-chip"}
-              onClick={() => set("artStyleId", style.id)}
-              aria-pressed={setup.artStyleId === style.id}
-            >
-              {activeKid ? (
-                <Avatar profile={{ ...activeKid, artStyle: style.id }} size={48} />
-              ) : (
-                <span className="big-chip-emoji">{"\u{1F3A8}"}</span>
-              )}
-              <span>{style.label}</span>
-            </button>
-          ))}
-        </div>
-      </section>
-
-      <section className="builder-section">
-        <h2 className="picker-heading">How long a story?</h2>
-        <div className="chip-grid">
-          {lengthOptions.map((option) => (
-            <button
-              key={option.id}
-              type="button"
-              className={setup.lengthId === option.id ? "big-chip selected" : "big-chip"}
-              onClick={() => set("lengthId", option.id)}
-              aria-pressed={setup.lengthId === option.id}
-            >
-              <span className="big-chip-emoji">{option.emoji}</span>
-              <span>{option.label}</span>
-              <span className="big-chip-sub">
-                &asymp; {option.minutes} min &middot; {option.pages} pages
-              </span>
-            </button>
-          ))}
-        </div>
-      </section>
-
-      <section className="builder-section">
-        <h2 className="picker-heading">Say-it-together lines?</h2>
-        <p className="picker-hint">
-          A short line on each page (like &ldquo;Whoosh, whoosh!&rdquo;) for kids to shout along.
-        </p>
-        <div className="chip-row">
-          <button
-            type="button"
-            className={!setup.readTogether ? "chip selected" : "chip"}
-            onClick={() => set("readTogether", false)}
-            aria-pressed={!setup.readTogether}
-          >
-            No, just the story
-          </button>
-          <button
-            type="button"
-            className={setup.readTogether ? "chip selected" : "chip"}
-            onClick={() => set("readTogether", true)}
-            aria-pressed={setup.readTogether}
-          >
-            Yes, include them
-          </button>
-        </div>
-      </section>
-
-      <section className="builder-section">
-        <h2 className="picker-heading">
-          Your plot idea or extra details <span className="optional-tag">optional</span>
-        </h2>
-        <textarea
-          className="extra-input"
-          value={setup.extra}
-          onChange={(event) => set("extra", event.target.value)}
-          placeholder="e.g. A treasure hunt for grandma's birthday. They love pancakes. Please avoid mentioning storms."
-          rows={3}
-          maxLength={500}
-        />
-        <p className="picker-hint">
-          A plot, favourite things, or anything to avoid. Used in magic stories; content rules
-          always apply.
-        </p>
-      </section>
-
-      <div className="builder-summary">
-        <p>
-          A <strong>{length.label.toLowerCase()}</strong>{" "}
-          <strong>
-            {setup.themeId === "custom"
-              ? setup.themeCustom.trim() || "your own story"
-              : theme.label.toLowerCase()}
-          </strong>{" "}
-          at{" "}
-          <strong>
-            {setup.placeId === "custom"
-              ? setup.placeCustom.trim() || "your own place"
-              : place.label.toLowerCase()}
-          </strong>
-          {setup.companionId !== "none" && (
-            <>
-              {" "}
-              with{" "}
-              <strong>
-                {setup.companionName.trim() ||
-                  (setup.companionId === "custom"
-                    ? setup.companionCustom.trim() || "your own companion"
-                    : `a ${companion.label.toLowerCase()}`)}
-              </strong>
-            </>
-          )}
-          , about{" "}
-          <strong>
-            {setup.lessonId === "custom"
-              ? setup.lessonCustom.trim() || "your own lesson"
-              : lesson.label.toLowerCase()}
-          </strong>{" "}
-          &mdash; starring <strong>{starring}</strong>.
-        </p>
-
-        {aiFailed ? (
-          <div className="ai-fallback">
-            <p>
-              The story magic isn&rsquo;t reachable right now, but an instant story is ready to
-              go.
+        {step === "extras" && (
+          <>
+            <p className="picker-label">Say-it-together lines?</p>
+            <p className="picker-hint">
+              A short line on each page (like &ldquo;Whoosh, whoosh!&rdquo;) for kids to shout along.
             </p>
-            <div className="finish-actions">
-              <button type="button" className="nav-button" onClick={makeStory}>
-                Try magic again
+            <div className="chip-row">
+              <button
+                type="button"
+                className={!setup.readTogether ? "chip selected" : "chip"}
+                onClick={() => set("readTogether", false)}
+                aria-pressed={!setup.readTogether}
+              >
+                No, just the story
               </button>
               <button
                 type="button"
-                className="nav-button primary"
-                onClick={() => onCreate(buildStory(setup, heroes))}
+                className={setup.readTogether ? "chip selected" : "chip"}
+                onClick={() => set("readTogether", true)}
+                aria-pressed={setup.readTogether}
               >
-                Make instant story
+                Yes, include them
               </button>
             </div>
-          </div>
-        ) : (
-          <button
-            type="button"
-            className="nav-button primary make-story"
-            onClick={makeStory}
-            disabled={loading}
-          >
-            {loading ? "Making magic..." : "Make my story"}
-          </button>
+
+            <p className="picker-label">
+              Your plot idea or extra details <span className="optional-tag">optional</span>
+            </p>
+            <textarea
+              className="extra-input"
+              value={setup.extra}
+              onChange={(event) => set("extra", event.target.value)}
+              placeholder="e.g. A treasure hunt for grandma's birthday. They love pancakes. Please avoid mentioning storms."
+              rows={3}
+              maxLength={500}
+            />
+            <p className="picker-hint">
+              A plot, favourite things, or anything to avoid. Content rules always apply.
+            </p>
+          </>
         )}
-      </div>
+
+        {step === "review" && (
+          <div className="builder-summary wizard-summary">
+            <p>
+              A <strong>{length.label.toLowerCase()}</strong>{" "}
+              <strong>
+                {setup.themeId === "custom"
+                  ? setup.themeCustom.trim() || "your own story"
+                  : theme.label.toLowerCase()}
+              </strong>{" "}
+              at{" "}
+              <strong>
+                {setup.placeId === "custom"
+                  ? setup.placeCustom.trim() || "your own place"
+                  : place.label.toLowerCase()}
+              </strong>
+              {setup.companionId !== "none" && (
+                <>
+                  {" "}
+                  with{" "}
+                  <strong>
+                    {setup.companionName.trim() ||
+                      (setup.companionId === "custom"
+                        ? setup.companionCustom.trim() || "your own companion"
+                        : `a ${companion.label.toLowerCase()}`)}
+                  </strong>
+                </>
+              )}
+              , about{" "}
+              <strong>
+                {setup.lessonId === "custom"
+                  ? setup.lessonCustom.trim() || "your own lesson"
+                  : lesson.label.toLowerCase()}
+              </strong>{" "}
+              &mdash; starring <strong>{starring}</strong>.
+            </p>
+
+            {aiFailed ? (
+              <div className="ai-fallback">
+                <p>
+                  The story magic isn&rsquo;t reachable right now, but an instant story is ready
+                  to go.
+                </p>
+                <div className="finish-actions">
+                  <button type="button" className="nav-button" onClick={makeStory}>
+                    Try magic again
+                  </button>
+                  <button
+                    type="button"
+                    className="nav-button primary"
+                    onClick={() => onCreate(buildStory(setup, heroes))}
+                  >
+                    Make instant story
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                className="nav-button primary make-story"
+                onClick={makeStory}
+                disabled={loading}
+              >
+                {loading ? "Making magic..." : "Make my story"}
+              </button>
+            )}
+          </div>
+        )}
+      </section>
+
+      {step !== "review" && (
+        <div className="reader-controls wizard-controls">
+          <button type="button" className="nav-button" onClick={goBack}>
+            Back
+          </button>
+          <button type="button" className="nav-button primary" onClick={goNext}>
+            Next
+          </button>
+        </div>
+      )}
 
       {loading && <LoadingOverlay />}
     </div>

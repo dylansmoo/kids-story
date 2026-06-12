@@ -14,6 +14,10 @@ export interface KidProfile {
 export interface ArtStyleOption {
   id: string;
   label: string;
+  /** Short kid-friendly description shown under the sample. */
+  desc: string;
+  /** Real generated sample image of this style. */
+  thumb: string;
   /** Style sentence used in illustration prompts. */
   prompt: string;
   /** Avatar frame colors. */
@@ -25,6 +29,8 @@ export const artStyles: ArtStyleOption[] = [
   {
     id: "watercolor",
     label: "Watercolor",
+    desc: "Soft, dreamy paint",
+    thumb: "/art-styles/watercolor.jpg",
     prompt:
       "Soft watercolor children's picture book illustration, warm pastel colors, rounded friendly shapes, gentle storybook light, cozy and cheerful mood",
     frame: "#fde8cf",
@@ -33,6 +39,8 @@ export const artStyles: ArtStyleOption[] = [
   {
     id: "crayon",
     label: "Crayon",
+    desc: "Waxy hand-drawn strokes",
+    thumb: "/art-styles/crayon.jpg",
     prompt:
       "Children's crayon drawing style, waxy textured strokes, bright happy colors, playful hand-drawn look, cheerful and silly mood",
     frame: "#fdf3c0",
@@ -41,6 +49,8 @@ export const artStyles: ArtStyleOption[] = [
   {
     id: "cartoon",
     label: "Cartoon",
+    desc: "Bold and bright",
+    thumb: "/art-styles/cartoon.jpg",
     prompt:
       "Bright modern cartoon style for preschoolers, bold clean outlines, vivid cheerful colors, big expressive eyes, fun energetic mood",
     frame: "#d4ecf7",
@@ -49,10 +59,52 @@ export const artStyles: ArtStyleOption[] = [
   {
     id: "papercut",
     label: "Paper craft",
+    desc: "Layered cut-out paper",
+    thumb: "/art-styles/papercut.jpg",
     prompt:
       "Paper cut-out collage illustration style, layered colored paper shapes with soft shadows, handmade craft look, warm and cozy mood",
     frame: "#e3f0d6",
     frameDark: "#a3c97f",
+  },
+  {
+    id: "clay",
+    label: "Clay",
+    desc: "Squishy clay characters",
+    thumb: "/art-styles/clay.jpg",
+    prompt:
+      "Claymation style children's illustration, soft plasticine clay characters with visible clay texture, rounded chunky shapes, warm playful lighting, cheerful mood",
+    frame: "#f3d2c0",
+    frameDark: "#d99b76",
+  },
+  {
+    id: "pixel",
+    label: "Pixel",
+    desc: "Chunky game pixels",
+    thumb: "/art-styles/pixel.jpg",
+    prompt:
+      "Cute pixel art children's illustration, chunky friendly pixels, bright cheerful retro game palette, simple adorable shapes",
+    frame: "#cfe5f5",
+    frameDark: "#86b8dd",
+  },
+  {
+    id: "comic",
+    label: "Comic",
+    desc: "Comic-book pop",
+    thumb: "/art-styles/comic.jpg",
+    prompt:
+      "Kid-friendly comic book illustration style, bold black outlines, gentle halftone dots, vibrant primary colors, playful energy",
+    frame: "#fde0a8",
+    frameDark: "#e8b04e",
+  },
+  {
+    id: "felt",
+    label: "Felt",
+    desc: "Soft stitched fabric",
+    thumb: "/art-styles/felt.jpg",
+    prompt:
+      "Handmade felt and fabric craft illustration style, soft stitched fabric textures, plush cozy characters, warm handmade look",
+    frame: "#e8ddf3",
+    frameDark: "#b393d9",
   },
 ];
 
