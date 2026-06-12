@@ -26,6 +26,8 @@ export interface Story {
   kidIds?: string[];
   /** Illustration style prompt chosen for this story. */
   artStyle?: string;
+  /** Show the "say it together" line on each page. Defaults to true for presets. */
+  readTogether?: boolean;
 }
 
 /** Used when no hero name has been set. Reads naturally anywhere a name appears. */

@@ -51,6 +51,7 @@ export const themeOptions: ThemeOption[] = [
   { id: "bedtime", label: "Sleepy Bedtime", emoji: "\u{1F319}", accent: "#8b7fd4" },
   { id: "imagination", label: "Make-Believe", emoji: "\u{2728}", accent: "#2fa897" },
   { id: "helping", label: "Helper Day", emoji: "\u{1F9FA}", accent: "#c75fa8" },
+  { id: "custom", label: "Your own", emoji: "\u{270F}\u{FE0F}", accent: "#e0a13c" },
 ];
 
 /** Standard options are idea-starters; "custom" lets parents write their own. */
@@ -194,6 +195,10 @@ export const lengthOptions: LengthOption[] = [
 
 export interface StorySetup {
   themeId: string;
+  /** Parent-written story type when themeId is "custom". */
+  themeCustom: string;
+  /** Include "say it together" shout-along lines on each page. */
+  readTogether: boolean;
   companionId: string;
   /** Optional name the parent gave the companion (e.g. the family dog's name). */
   companionName: string;
@@ -214,6 +219,8 @@ export interface StorySetup {
 
 export const defaultSetup: StorySetup = {
   themeId: themeOptions[0].id,
+  themeCustom: "",
+  readTogether: false,
   companionId: companionOptions[0].id,
   companionName: "",
   companionCustom: "",
@@ -432,6 +439,8 @@ export const buildStory = (setup: StorySetup, kids: KidProfile[]): Story => {
   const companionLabel = petName
     ? `${companionPhrase} ${petName}`
     : `a ${companionPhrase}`;
+  const themeLabel =
+    theme.id === "custom" ? cap(stripArticle(setup.themeCustom.trim()) || "Adventure") : theme.label;
 
   return {
     id: `my-${Date.now()}`,
@@ -439,7 +448,7 @@ export const buildStory = (setup: StorySetup, kids: KidProfile[]): Story => {
     subtitle: hasCompanion
       ? `A story about ${lessonText}, with ${companionLabel}`
       : `A story about ${lessonText}`,
-    theme: theme.label,
+    theme: themeLabel,
     accent: theme.accent,
     emoji: hasCompanion && companion.id !== "custom" ? companion.emoji : theme.emoji,
     minutes: Math.max(2, Math.round(pages.length / 2)),
@@ -447,5 +456,6 @@ export const buildStory = (setup: StorySetup, kids: KidProfile[]): Story => {
     heroName: heroNames || undefined,
     kidIds: heroes.map((kid) => kid.id),
     artStyle: resolveArtStyle(setup, heroes[0] ?? null),
+    readTogether: setup.readTogether,
   };
 };

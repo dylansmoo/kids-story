@@ -77,6 +77,8 @@ export const generateAiStory = async (
     lesson.id === "custom"
       ? setup.lessonCustom.trim() || "kindness"
       : lesson.label.toLowerCase();
+  const themeText =
+    theme.id === "custom" ? setup.themeCustom.trim() || "Big Adventure" : theme.label;
 
   const response = await fetch("/api/story", {
     method: "POST",
@@ -89,7 +91,7 @@ export const generateAiStory = async (
         description: describeKid(kid),
       })),
       setup: {
-        theme: theme.label,
+        theme: themeText,
         companion:
           companion.id === "none" || !companionPhrase
             ? ""
@@ -130,7 +132,10 @@ export const generateAiStory = async (
     id: `my-${Date.now()}`,
     title: data.title,
     subtitle: data.subtitle || `A story about ${lessonText}`,
-    theme: theme.label,
+    theme:
+      theme.id === "custom"
+        ? themeText.charAt(0).toUpperCase() + themeText.slice(1)
+        : theme.label,
     accent: theme.accent,
     emoji:
       companion.id === "none" || companion.id === "custom" ? theme.emoji : companion.emoji,
@@ -138,6 +143,7 @@ export const generateAiStory = async (
     heroName: heroNames || undefined,
     kidIds: heroes.map((kid) => kid.id),
     artStyle: resolveArtStyle(setup, heroes[0] ?? null),
+    readTogether: setup.readTogether,
     pages: data.pages.map((page, index) => ({
       text: page.text,
       readAloud: page.readAloud,

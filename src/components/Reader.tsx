@@ -83,14 +83,16 @@ function Reader({ story, kids, activeKid, onExit }: ReaderProps) {
             <p className="reader-text">
               <HeroText text={current.text} name={name} highlightNames={highlightNames} />
             </p>
-            <div className="read-aloud">
-              <span className="read-aloud-label">Say it together</span>
-              <span className="read-aloud-line">
-                &ldquo;
-                <HeroText text={current.readAloud} name={name} highlightNames={highlightNames} />
-                &rdquo;
-              </span>
-            </div>
+            {story.readTogether !== false && (
+              <div className="read-aloud">
+                <span className="read-aloud-label">Say it together</span>
+                <span className="read-aloud-line">
+                  &ldquo;
+                  <HeroText text={current.readAloud} name={name} highlightNames={highlightNames} />
+                  &rdquo;
+                </span>
+              </div>
+            )}
           </div>
         ) : (
           <div className="reader-page finish">
@@ -159,7 +161,11 @@ function Reader({ story, kids, activeKid, onExit }: ReaderProps) {
               <div className="print-page-emoji">{storyPage.emoji}</div>
             )}
             <p className="print-page-text">{personalize(storyPage.text, name)}</p>
-            <p className="print-page-aloud">Say it together: &ldquo;{personalize(storyPage.readAloud, name)}&rdquo;</p>
+            {story.readTogether !== false && (
+              <p className="print-page-aloud">
+                Say it together: &ldquo;{personalize(storyPage.readAloud, name)}&rdquo;
+              </p>
+            )}
             <span className="print-page-number">{index + 1}</span>
           </div>
         ))}
