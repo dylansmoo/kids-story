@@ -16,6 +16,8 @@ export interface Story {
   emoji: string;
   minutes: number;
   pages: StoryPage[];
+  /** Set on stories created in the builder: the hero's name at creation time. */
+  heroName?: string;
 }
 
 /** Used when no hero name has been set. Reads naturally anywhere a name appears. */

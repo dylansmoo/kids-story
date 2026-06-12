@@ -1,18 +1,21 @@
 import { useEffect, useState } from "react";
+import { Avatar } from "../Avatar";
 import { HeroText, heroName } from "../HeroText";
+import type { KidProfile } from "../profile";
 import { personalize, type Story } from "../stories";
 
 interface ReaderProps {
   story: Story;
-  name: string;
+  profile: KidProfile | null;
   onExit: () => void;
 }
 
-function Reader({ story, name, onExit }: ReaderProps) {
+function Reader({ story, profile, onExit }: ReaderProps) {
   // `page` ranges 0..pages.length; the final value shows the celebration screen.
   const [page, setPage] = useState(0);
   const pageCount = story.pages.length;
   const finished = page >= pageCount;
+  const name = story.heroName ?? profile?.name ?? "";
 
   const goBack = () => setPage((current) => Math.max(0, current - 1));
   const goNext = () => setPage((current) => Math.min(pageCount, current + 1));
@@ -47,7 +50,12 @@ function Reader({ story, name, onExit }: ReaderProps) {
         {current ? (
           <div className="reader-page">
             <div className="reader-illustration" aria-hidden="true">
-              {current.emoji}
+              <span className="scene-emoji">{current.emoji}</span>
+              {profile && (
+                <span className="scene-avatar">
+                  <Avatar profile={profile} size={84} />
+                </span>
+              )}
             </div>
             <p className="reader-text">
               <HeroText text={current.text} name={name} />
