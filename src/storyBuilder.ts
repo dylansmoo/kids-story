@@ -1,5 +1,12 @@
-import { hairWordOf, type KidProfile } from "./profile";
+import { artStyleOf, artStyles, hairWordOf, type KidProfile } from "./profile";
 import type { Story, StoryPage } from "./stories";
+
+/** Illustration style prompt: per-story choice, else the lead kid's profile style. */
+export const resolveArtStyle = (
+  setup: { artStyleId: string },
+  leadKid: KidProfile | null,
+): string =>
+  (artStyles.find((style) => style.id === setup.artStyleId) ?? artStyleOf(leadKid)).prompt;
 
 export interface ThemeOption {
   id: string;
@@ -40,25 +47,21 @@ export interface LessonOption {
 }
 
 export const themeOptions: ThemeOption[] = [
-  { id: "adventure", label: "Big Adventure", emoji: "\u{1F5FA}\u{FE0F}", accent: "#ec7d35" },
-  { id: "bedtime", label: "Sleepy Bedtime", emoji: "\u{1F319}", accent: "#8a7fc4" },
-  { id: "imagination", label: "Make-Believe", emoji: "\u{2728}", accent: "#3da18a" },
-  { id: "helping", label: "Helper Day", emoji: "\u{1F9FA}", accent: "#b5533c" },
+  { id: "adventure", label: "Big Adventure", emoji: "\u{1F5FA}\u{FE0F}", accent: "#f4724b" },
+  { id: "bedtime", label: "Sleepy Bedtime", emoji: "\u{1F319}", accent: "#8b7fd4" },
+  { id: "imagination", label: "Make-Believe", emoji: "\u{2728}", accent: "#2fa897" },
+  { id: "helping", label: "Helper Day", emoji: "\u{1F9FA}", accent: "#c75fa8" },
 ];
 
+/** Standard options are idea-starters; "custom" lets parents write their own. */
 export const companionOptions: CompanionOption[] = [
   { id: "puppy", label: "Puppy", emoji: "\u{1F436}", phrase: "little puppy", antic: "chased its own waggly tail" },
   { id: "kitten", label: "Kitten", emoji: "\u{1F431}", phrase: "fluffy kitten", antic: "pounced on a dancing leaf" },
-  { id: "bunny", label: "Bunny", emoji: "\u{1F430}", phrase: "hoppy bunny", antic: "did three happy hops in a row" },
   { id: "dragon", label: "Dragon", emoji: "\u{1F432}", phrase: "friendly dragon", antic: "blew a tiny, warm smoke ring" },
-  { id: "teddy", label: "Teddy Bear", emoji: "\u{1F9F8}", phrase: "brave teddy bear", antic: "tumbled head over heels" },
-  { id: "pony", label: "Pony", emoji: "\u{1F434}", phrase: "gentle pony", antic: "swished its swishy tail" },
   { id: "fairy", label: "Fairy", emoji: "\u{1F9DA}", phrase: "kind little fairy", antic: "sprinkled a puff of sparkly dust" },
-  { id: "superhero", label: "Superhero", emoji: "\u{1F9B8}", phrase: "small superhero friend", antic: "zoomed one happy loop in a tiny cape" },
-  { id: "robot", label: "Robot", emoji: "\u{1F916}", phrase: "friendly robot", antic: "beeped a cheerful boop-boop tune" },
-  { id: "monster", label: "Silly Monster", emoji: "\u{1F47E}", phrase: "fuzzy little monster", antic: "wiggled its fuzzy ears until everyone giggled" },
   { id: "dino", label: "Dinosaur", emoji: "\u{1F995}", phrase: "baby dinosaur", antic: "stomped one tiny, happy stomp" },
   { id: "none", label: "No companion", emoji: "\u{1F31F}", phrase: "", antic: "" },
+  { id: "custom", label: "Your own", emoji: "\u{270F}\u{FE0F}", phrase: "", antic: "did something wonderfully silly" },
 ];
 
 export const placeOptions: PlaceOption[] = [
@@ -98,11 +101,11 @@ export const placeOptions: PlaceOption[] = [
     sight: "Stars twinkled like night-lights and a comet zoomed past with a whoosh.",
   },
   {
-    id: "snow",
-    label: "Snowy Hill",
-    emoji: "\u{2744}\u{FE0F}",
-    phrase: "the snowy hill",
-    sight: "Snowflakes danced in the air and everything sparkled soft and white.",
+    id: "custom",
+    label: "Your own",
+    emoji: "\u{270F}\u{FE0F}",
+    phrase: "",
+    sight: "It was even better than they imagined. Wonderful things waited everywhere.",
   },
 ];
 
@@ -141,37 +144,6 @@ export const lessonOptions: LessonOption[] = [
     moral: "Good things feel even better when they are shared.",
   },
   {
-    id: "truth",
-    label: "Telling the truth",
-    emoji: "\u{2B50}",
-    challenge: () =>
-      "Crash! Something tipped right over. Nobody saw who did it... except {name}.",
-    choice: "{name} stood up tall and said, \u201CIt was me. I am sorry. Let me help fix it.\u201D",
-    cheer: "Tell the truth!",
-    moral: "Telling the truth makes hearts feel light and strong.",
-  },
-  {
-    id: "tryagain",
-    label: "Trying again",
-    emoji: "\u{1F501}",
-    challenge: () =>
-      "{name} tried and tried, but it just would not work. Not even a little bit.",
-    choice:
-      "{name} wiggled ten fingers, took a big breath, and tried one more time \u2014 slowly, slowly.",
-    cheer: "Try, try again!",
-    moral: "When something is tricky, a rest and another try works wonders.",
-  },
-  {
-    id: "tidy",
-    label: "Tidying up",
-    emoji: "\u{1F9F9}",
-    challenge: () =>
-      "Oh my! Things were scattered everywhere \u2014 what a muddle, what a mess!",
-    choice: "{name} sang a tidy-up song and put every single thing back in its home.",
-    cheer: "Tidy up, tidy up!",
-    moral: "Little helpers make a big, happy difference.",
-  },
-  {
     id: "friends",
     label: "Making friends",
     emoji: "\u{1F44B}",
@@ -191,6 +163,16 @@ export const lessonOptions: LessonOption[] = [
       "{name} took a big breath, gave a little shake, and said, \u201CThat's okay. Let's try another way!\u201D",
     cheer: "Bounce back up!",
     moral: "When things go wrong, brave hearts bounce back and try another way.",
+  },
+  {
+    id: "custom",
+    label: "Your own",
+    emoji: "\u{270F}\u{FE0F}",
+    challenge: () =>
+      "Then came a tricky moment that made everyone stop and think.",
+    choice: "{name} took a big breath and remembered what mattered most.",
+    cheer: "We can do it!",
+    moral: "Every day is a chance to learn something wonderful.",
   },
 ];
 
@@ -215,9 +197,17 @@ export interface StorySetup {
   companionId: string;
   /** Optional name the parent gave the companion (e.g. the family dog's name). */
   companionName: string;
+  /** Parent-written companion when companionId is "custom". */
+  companionCustom: string;
   placeId: string;
+  /** Parent-written place when placeId is "custom". */
+  placeCustom: string;
   lessonId: string;
+  /** Parent-written lesson when lessonId is "custom". */
+  lessonCustom: string;
   lengthId: string;
+  /** Illustration style for this story (art style id). */
+  artStyleId: string;
   /** Optional free-text details; used by AI generation only. */
   extra: string;
 }
@@ -226,11 +216,18 @@ export const defaultSetup: StorySetup = {
   themeId: themeOptions[0].id,
   companionId: companionOptions[0].id,
   companionName: "",
+  companionCustom: "",
   placeId: placeOptions[0].id,
+  placeCustom: "",
   lessonId: lessonOptions[0].id,
+  lessonCustom: "",
   lengthId: lengthOptions[1].id,
+  artStyleId: "",
   extra: "",
 };
+
+const stripArticle = (text: string): string =>
+  text.trim().replace(/^(a|an|the)\s+/i, "");
 
 const cap = (text: string): string => text.charAt(0).toUpperCase() + text.slice(1);
 
@@ -258,14 +255,31 @@ export const buildStory = (setup: StorySetup, kids: KidProfile[]): Story => {
   const heroNames = joinNames(heroes.map((kid) => kid.name));
 
   const hasCompanion = companion.id !== "none";
+  const companionPhrase =
+    companion.id === "custom"
+      ? stripArticle(setup.companionCustom) || "little friend"
+      : companion.phrase;
   const petName = setup.companionName.trim();
   // "Scout" once named, otherwise "the little puppy".
-  const ref = hasCompanion ? (petName || `the ${companion.phrase}`) : null;
+  const ref = hasCompanion ? (petName || `the ${companionPhrase}`) : null;
   const refIntro = hasCompanion
     ? petName
-      ? `${petName} the ${companion.phrase}`
-      : `the ${companion.phrase}`
+      ? `${petName} the ${companionPhrase}`
+      : `the ${companionPhrase}`
     : null;
+
+  const placePhrase =
+    place.id === "custom" ? setup.placeCustom.trim() || "a wonderful place" : place.phrase;
+  const placeLabel =
+    place.id === "custom" ? cap(stripArticle(placePhrase)) : place.label;
+
+  const lessonCustom = setup.lessonCustom.trim().replace(/\.+$/, "");
+  const lessonChoice =
+    lesson.id === "custom" && lessonCustom
+      ? `{name} took a big breath and remembered what mattered: ${lessonCustom.toLowerCase()}. And that made all the difference.`
+      : lesson.choice;
+  const lessonMoral =
+    lesson.id === "custom" && lessonCustom ? `${cap(lessonCustom)}.` : lesson.moral;
 
   const kidWord = multi
     ? "heroes"
@@ -289,48 +303,48 @@ export const buildStory = (setup: StorySetup, kids: KidProfile[]): Story => {
   switch (theme.id) {
     case "bedtime":
       opener = withRef(
-        `The stars were waking up, so {name} and ${refIntro} tiptoed off for one last quiet peek at ${place.phrase}.`,
-        `The stars were waking up, so {name} tiptoed off for one last quiet peek at ${place.phrase}.`,
+        `The stars were waking up, so {name} and ${refIntro} tiptoed off for one last quiet peek at ${placePhrase}.`,
+        `The stars were waking up, so {name} tiptoed off for one last quiet peek at ${placePhrase}.`,
       );
       openCheer = "Tiptoe, tiptoe!";
-      ending = `Then it was time for bed. {name} snuggled deep under the blanket${multi ? "s" : ""}, the sleepiest ${kidWord} in town. ${lesson.moral} Goodnight, {name}.`;
+      ending = `Then it was time for bed. {name} snuggled deep under the blanket${multi ? "s" : ""}, the sleepiest ${kidWord} in town. ${lessonMoral} Goodnight, {name}.`;
       endEmoji = "\u{1F634}";
-      title = `Goodnight, ${place.label}`;
+      title = `Goodnight, ${placeLabel}`;
       break;
     case "imagination":
       opener = withRef(
-        `{name} closed ${multi ? "every eye tight" : "two eyes"} and counted: one, two, three! Poof \u2014 the living room turned into ${place.phrase}, and ${refIntro} came too!`,
-        `{name} closed ${multi ? "every eye tight" : "two eyes"} and counted: one, two, three! Poof \u2014 the living room turned into ${place.phrase}!`,
+        `{name} closed ${multi ? "every eye tight" : "two eyes"} and counted: one, two, three! Poof \u2014 the living room turned into ${placePhrase}, and ${refIntro} came too!`,
+        `{name} closed ${multi ? "every eye tight" : "two eyes"} and counted: one, two, three! Poof \u2014 the living room turned into ${placePhrase}!`,
       );
       openCheer = "One, two, three!";
-      ending = `With one more blink, {name} ${multi ? "were" : "was"} home again, grinning the biggest grin. ${lesson.moral} What will tomorrow become?`;
+      ending = `With one more blink, {name} ${multi ? "were" : "was"} home again, grinning the biggest grin. ${lessonMoral} What will tomorrow become?`;
       endEmoji = "\u{1F31F}";
-      title = `{name}'s Make-Believe ${place.label}`;
+      title = `{name}'s Make-Believe ${placeLabel}`;
       break;
     case "helping":
       opener = withRef(
-        `{name} pulled on big helper boots and called ${refIntro}. ${cap(place.phrase)} needed a helper today!`,
-        `{name} pulled on big helper boots. ${cap(place.phrase)} needed a helper today!`,
+        `{name} pulled on big helper boots and called ${refIntro}. ${cap(placePhrase)} needed a helper today!`,
+        `{name} pulled on big helper boots. ${cap(placePhrase)} needed a helper today!`,
       );
       openCheer = "I can help!";
-      ending = `\u201CWhat a wonderful helper${multi ? "s" : ""}!\u201D everyone cheered. {name} stood tall and proud, the best helper ${kidWord} around. ${lesson.moral}`;
+      ending = `\u201CWhat a wonderful helper${multi ? "s" : ""}!\u201D everyone cheered. {name} stood tall and proud, the best helper ${kidWord} around. ${lessonMoral}`;
       endEmoji = "\u{1F31F}";
       title = `{name}'s Big Helper Day`;
       break;
     default:
       opener = withRef(
-        `One bright morning, {name} packed a tiny backpack and called ${refIntro}. Today they would explore ${place.phrase}!`,
-        `One bright morning, {name} packed a tiny backpack. Today was the day to explore ${place.phrase}!`,
+        `One bright morning, {name} packed a tiny backpack and called ${refIntro}. Today they would explore ${placePhrase}!`,
+        `One bright morning, {name} packed a tiny backpack. Today was the day to explore ${placePhrase}!`,
       );
       openCheer = "Let's go!";
-      ending = `{name} marched home, the bravest ${kidWord} in the whole town. ${lesson.moral}`;
+      ending = `{name} marched home, the bravest ${kidWord} in the whole town. ${lessonMoral}`;
       endEmoji = "\u{1F3E1}";
-      title = `{name} and the ${place.label} Adventure`;
+      title = `{name} and the ${placeLabel} Adventure`;
   }
 
   const openerPage: StoryPage = { text: opener, readAloud: openCheer, emoji: theme.emoji };
   const sightPage: StoryPage = {
-    text: `${cap(place.phrase)} was wonderful. ${place.sight}`,
+    text: `${cap(placePhrase)} was wonderful. ${place.sight}`,
     readAloud: "Wow!",
     emoji: place.emoji,
   };
@@ -351,7 +365,7 @@ export const buildStory = (setup: StorySetup, kids: KidProfile[]): Story => {
     emoji: "\u{1F62E}",
   };
   const choicePage: StoryPage = {
-    text: lesson.choice,
+    text: lessonChoice,
     readAloud: lesson.cheer,
     emoji: lesson.emoji,
   };
@@ -413,26 +427,25 @@ export const buildStory = (setup: StorySetup, kids: KidProfile[]): Story => {
             endingPage,
           ];
 
-  const companionLabel =
-    companion.id === "none"
-      ? "solo"
-      : petName
-        ? `${companion.label.toLowerCase()} ${petName}`
-        : `a ${companion.label.toLowerCase()}`;
+  const lessonText =
+    lesson.id === "custom" && lessonCustom ? lessonCustom.toLowerCase() : lesson.label.toLowerCase();
+  const companionLabel = petName
+    ? `${companionPhrase} ${petName}`
+    : `a ${companionPhrase}`;
 
   return {
     id: `my-${Date.now()}`,
     title,
-    subtitle:
-      companion.id === "none"
-        ? `A ${lesson.label.toLowerCase()} story`
-        : `A ${lesson.label.toLowerCase()} story with ${companionLabel}`,
+    subtitle: hasCompanion
+      ? `A story about ${lessonText}, with ${companionLabel}`
+      : `A story about ${lessonText}`,
     theme: theme.label,
     accent: theme.accent,
-    emoji: companion.id === "none" ? theme.emoji : companion.emoji,
+    emoji: hasCompanion && companion.id !== "custom" ? companion.emoji : theme.emoji,
     minutes: Math.max(2, Math.round(pages.length / 2)),
     pages,
     heroName: heroNames || undefined,
     kidIds: heroes.map((kid) => kid.id),
+    artStyle: resolveArtStyle(setup, heroes[0] ?? null),
   };
 };

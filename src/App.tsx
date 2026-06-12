@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { characterSheet, compressImage, illustratePage } from "./ai";
-import AgeGate from "./components/AgeGate";
 import Builder from "./components/Builder";
 import Home from "./components/Home";
+import Login from "./components/Login";
 import ProfileEditor from "./components/ProfileEditor";
 import Reader from "./components/Reader";
 import { artStyleOf, newKidProfile, type KidProfile } from "./profile";
@@ -15,6 +15,7 @@ const MY_STORIES_KEY = "lhs:myStories";
 const LEGACY_NAME_KEY = "lhs:heroName";
 const THEME_KEY = "lhs:theme";
 const ADULT_KEY = "lhs:adultConfirmed";
+const SESSION_KEY = "lhs:session";
 
 type View =
   | { screen: "home" }
@@ -65,13 +66,20 @@ function App() {
   const [theme, setTheme] = useState<"light" | "dark">(() =>
     localStorage.getItem(THEME_KEY) === "dark" ? "dark" : "light",
   );
-  const [adultConfirmed, setAdultConfirmed] = useState(
-    () => localStorage.getItem(ADULT_KEY) === "true",
+  const [session, setSession] = useState<{ email: string } | null>(() =>
+    loadJson<{ email: string } | null>(SESSION_KEY, null),
   );
 
-  const confirmAdult = () => {
+  const signIn = (email: string) => {
+    const next = { email };
+    saveJson(SESSION_KEY, next);
     localStorage.setItem(ADULT_KEY, "true");
-    setAdultConfirmed(true);
+    setSession(next);
+  };
+
+  const signOut = () => {
+    localStorage.removeItem(SESSION_KEY);
+    setSession(null);
   };
 
   useEffect(() => {
@@ -108,7 +116,9 @@ function App() {
   };
 
   const deleteKid = (kidId: string) => {
-    setKids((current) => current.filter((kid) => kid.id !== kidId));
+    const kid = kids.find((entry) => entry.id === kidId);
+    if (!window.confirm(`Delete ${kid?.name || "this child"}'s profile?`)) return;
+    setKids((current) => current.filter((entry) => entry.id !== kidId));
     if (activeKidId === kidId) setActiveKidId(null);
     goTo({ screen: "home" });
   };
@@ -139,7 +149,7 @@ function App() {
   /** Paints AI story pages one by one; the reader updates live as images land. */
   const illustrateStory = async (story: Story, heroes: KidProfile[]) => {
     const character = characterSheet(heroes);
-    const style = artStyleOf(heroes[0] ?? null).prompt;
+    const style = story.artStyle ?? artStyleOf(heroes[0] ?? null).prompt;
     for (let index = 0; index < story.pages.length; index += 1) {
       const scene = story.pages[index].illustration;
       if (!scene) continue;
@@ -161,6 +171,7 @@ function App() {
   };
 
   const deleteStory = (storyId: string) => {
+    if (!window.confirm("Delete this story?")) return;
     setMyStories((current) => current.filter((story) => story.id !== storyId));
   };
 
@@ -170,6 +181,23 @@ function App() {
         presetStories.find((story) => story.id === view.storyId) ??
         null)
       : null;
+
+  if (!session) {
+    return (
+      <main className="app">
+        <button
+          type="button"
+          className="theme-toggle no-print"
+          onClick={() => setTheme((current) => (current === "light" ? "dark" : "light"))}
+          aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
+        >
+          <span aria-hidden="true">{theme === "light" ? "\u{1F319}" : "\u{2600}\u{FE0F}"}</span>
+          <span className="theme-toggle-label">{theme === "light" ? "Dark" : "Light"}</span>
+        </button>
+        <Login onComplete={signIn} />
+      </main>
+    );
+  }
 
   return (
     <main className="app">
@@ -196,6 +224,8 @@ function App() {
           onDeleteStory={deleteStory}
           onOpenStory={(story) => goTo({ screen: "reader", storyId: story.id })}
           onBuildStory={() => goTo({ screen: "builder" })}
+          email={session.email}
+          onSignOut={signOut}
         />
       )}
 
@@ -226,8 +256,6 @@ function App() {
           onExit={() => goTo({ screen: "home" })}
         />
       )}
-
-      {!adultConfirmed && <AgeGate onConfirm={confirmAdult} />}
     </main>
   );
 }

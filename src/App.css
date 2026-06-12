@@ -1,35 +1,35 @@
 :root {
-  --bg: #fff7e8;
-  --card: #fffdf7;
-  --soft: #fff4dc;
-  --ink: #2d2218;
-  --muted: #745d45;
-  --faint: #957c5f;
-  --border: rgb(45 34 24 / 12%);
-  --border-strong: rgb(45 34 24 / 18%);
+  --bg: #f7f5f0;
+  --card: #ffffff;
+  --soft: #ffeee4;
+  --ink: #2f3a4f;
+  --muted: #5f6b82;
+  --faint: #8b96ab;
+  --border: rgb(47 58 79 / 10%);
+  --border-strong: rgb(47 58 79 / 18%);
   --input-bg: #ffffff;
-  --brand: #ec7d35;
-  --brand-deep: #a85a1f;
-  --hero-name: #c2611f;
-  --shadow: 0 14px 36px rgb(79 48 20 / 10%);
-  --shadow-big: 0 18px 48px rgb(79 48 20 / 12%);
+  --brand: #f4724b;
+  --brand-deep: #d9532e;
+  --hero-name: #e0633c;
+  --shadow: 0 10px 30px rgb(47 58 79 / 8%);
+  --shadow-big: 0 16px 44px rgb(47 58 79 / 11%);
 }
 
 [data-theme="dark"] {
-  --bg: #1e1711;
-  --card: #2a211a;
-  --soft: #362a1e;
-  --ink: #f3e8d8;
-  --muted: #c4ab90;
-  --faint: #a38c70;
-  --border: rgb(255 235 210 / 14%);
-  --border-strong: rgb(255 235 210 / 24%);
-  --input-bg: #231b14;
-  --brand: #f08c4a;
-  --brand-deep: #f0a366;
-  --hero-name: #f0a366;
-  --shadow: 0 14px 36px rgb(0 0 0 / 35%);
-  --shadow-big: 0 18px 48px rgb(0 0 0 / 42%);
+  --bg: #141927;
+  --card: #1e2536;
+  --soft: #2a3147;
+  --ink: #ecf0fa;
+  --muted: #a9b4cc;
+  --faint: #7e8aa6;
+  --border: rgb(236 240 250 / 12%);
+  --border-strong: rgb(236 240 250 / 22%);
+  --input-bg: #171d2c;
+  --brand: #ff8a63;
+  --brand-deep: #ffa585;
+  --hero-name: #ffa585;
+  --shadow: 0 10px 30px rgb(0 0 0 / 35%);
+  --shadow-big: 0 16px 44px rgb(0 0 0 / 45%);
 }
 
 html {
@@ -139,24 +139,25 @@ button {
 
 .hero-input:focus {
   border-color: var(--brand);
-  box-shadow: 0 0 0 4px rgb(236 125 53 / 18%);
+  box-shadow: 0 0 0 4px rgb(244 114 75 / 18%);
 }
 
 .story-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
+  gap: 14px;
 }
 
 .story-card {
   position: relative;
   display: grid;
-  gap: 8px;
+  gap: 6px;
+  align-content: start;
   border: 1px solid var(--border);
-  border-top: 6px solid var(--accent);
-  border-radius: 22px;
+  border-top: 5px solid var(--accent);
+  border-radius: 18px;
   background: var(--card);
-  padding: 24px;
+  padding: 16px;
   box-shadow: var(--shadow);
   transition:
     transform 0.15s ease,
@@ -172,7 +173,7 @@ button {
   inset: 0;
   z-index: 1;
   border: 0;
-  border-radius: 22px;
+  border-radius: 18px;
   background: none;
 }
 
@@ -183,18 +184,18 @@ button {
 
 .fav-button {
   position: absolute;
-  top: 16px;
-  right: 16px;
+  top: 10px;
+  right: 10px;
   z-index: 2;
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
+  width: 36px;
+  height: 36px;
   border: 1px solid var(--border);
   border-radius: 999px;
   background: var(--input-bg);
-  color: #c9b8a4;
-  font-size: 1.3rem;
+  color: var(--faint);
+  font-size: 1.05rem;
   line-height: 1;
 }
 
@@ -207,37 +208,38 @@ button {
 .story-cover {
   display: grid;
   place-items: center;
-  width: 72px;
-  height: 72px;
-  border-radius: 18px;
-  margin-bottom: 6px;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  margin-bottom: 4px;
   background: color-mix(in srgb, var(--accent) 18%, var(--card));
-  font-size: 2.4rem;
+  font-size: 1.7rem;
 }
 
 .story-theme {
   color: var(--accent);
-  font-size: 0.78rem;
+  font-size: 0.7rem;
   font-weight: 800;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
 .story-title {
-  font-size: 1.3rem;
+  font-size: 1.05rem;
   font-weight: 800;
-  line-height: 1.2;
+  line-height: 1.25;
 }
 
 .story-subtitle {
   color: var(--muted);
-  font-size: 0.98rem;
+  font-size: 0.85rem;
+  line-height: 1.4;
 }
 
 .story-meta {
-  margin-top: 4px;
+  margin-top: 2px;
   color: var(--faint);
-  font-size: 0.85rem;
+  font-size: 0.76rem;
   font-weight: 700;
 }
 
@@ -272,7 +274,7 @@ button {
 
 .kid-chip.active {
   border-color: var(--brand);
-  box-shadow: 0 0 0 4px rgb(236 125 53 / 14%);
+  box-shadow: 0 0 0 4px rgb(244 114 75 / 14%);
 }
 
 .kid-select {
@@ -330,11 +332,11 @@ button {
   margin-bottom: 40px;
   border: 0;
   border-radius: 24px;
-  background: linear-gradient(120deg, #ec7d35, #d96aa0);
+  background: linear-gradient(120deg, #f4724b, #c75fa8);
   color: white;
   padding: 22px 26px;
   text-align: left;
-  box-shadow: 0 18px 44px rgb(236 125 53 / 35%);
+  box-shadow: 0 16px 40px rgb(244 114 75 / 30%);
   transition: transform 0.15s ease;
 }
 
@@ -460,7 +462,7 @@ button {
 .swatch.selected {
   box-shadow:
     0 0 0 3px var(--brand),
-    0 0 0 7px rgb(236 125 53 / 20%);
+    0 0 0 7px rgb(244 114 75 / 20%);
 }
 
 .style-pick {
@@ -623,11 +625,16 @@ button {
 
 .extra-input:focus {
   border-color: var(--brand);
-  box-shadow: 0 0 0 4px rgb(236 125 53 / 18%);
+  box-shadow: 0 0 0 4px rgb(244 114 75 / 18%);
 }
 
 .builder-section .picker-hint {
   margin-top: 6px;
+}
+
+.builder-intro {
+  margin: -8px 0 20px;
+  text-align: center;
 }
 
 .age-gate {
@@ -693,6 +700,32 @@ button {
   margin: 0;
   color: var(--muted);
   font-size: 0.92rem;
+}
+
+.fun-fact {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  margin-top: 10px;
+  border-radius: 16px;
+  background: var(--soft);
+  padding: 14px 16px;
+}
+
+.fun-fact-label {
+  color: var(--brand-deep);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.fun-fact-text {
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.98rem;
+  font-weight: 700;
+  line-height: 1.5;
 }
 
 .ai-fallback {
@@ -762,11 +795,13 @@ button {
 }
 
 .scene-img {
-  width: 100%;
-  max-height: 380px;
-  object-fit: cover;
-  border-radius: 22px;
   display: block;
+  width: auto;
+  max-width: 100%;
+  max-height: min(58vh, 480px);
+  margin: 0 auto;
+  object-fit: contain;
+  border-radius: 22px;
 }
 
 .painting-note {
@@ -1010,6 +1045,79 @@ button {
     font-size: 14px;
     color: #957c5f;
   }
+}
+
+/* ---------- Login ---------- */
+
+.login {
+  display: grid;
+  place-items: center;
+  min-height: 80vh;
+}
+
+.login-card {
+  display: grid;
+  gap: 14px;
+  width: min(440px, 100%);
+  border: 1px solid var(--border);
+  border-radius: 28px;
+  background: var(--card);
+  padding: clamp(28px, 5vw, 44px);
+  box-shadow: var(--shadow-big);
+  text-align: center;
+}
+
+.login-emoji {
+  font-size: 3rem;
+}
+
+.login-card h1 {
+  margin: 0;
+  font-size: 2rem;
+  letter-spacing: -0.03em;
+}
+
+.login-sub {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.login-card .hero-input {
+  text-align: center;
+}
+
+.login-check {
+  display: flex;
+  align-items: start;
+  gap: 10px;
+  text-align: left;
+  color: var(--muted);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.login-check input {
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  accent-color: var(--brand);
+}
+
+.login-note {
+  margin: 0;
+  color: var(--faint);
+  font-size: 0.84rem;
+}
+
+.signed-in-row {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 12px;
+  color: var(--faint);
+  font-size: 0.85rem;
+  font-weight: 600;
 }
 
 /* ---------- Small screens ---------- */

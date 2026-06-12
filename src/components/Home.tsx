@@ -15,6 +15,8 @@ interface HomeProps {
   onDeleteStory: (storyId: string) => void;
   onOpenStory: (story: Story) => void;
   onBuildStory: () => void;
+  email: string;
+  onSignOut: () => void;
 }
 
 function Home({
@@ -29,6 +31,8 @@ function Home({
   onDeleteStory,
   onOpenStory,
   onBuildStory,
+  email,
+  onSignOut,
 }: HomeProps) {
   const activeName = activeKid?.name ?? "";
 
@@ -108,8 +112,9 @@ function Home({
                   className="fav-button"
                   onClick={() => onDeleteStory(story.id)}
                   aria-label="Delete story"
+                  title="Delete story"
                 >
-                  {"\u2715"}
+                  {"\u{1F5D1}\u{FE0F}"}
                 </button>
                 <span className="story-cover" aria-hidden="true">
                   {story.emoji}
@@ -173,6 +178,12 @@ function Home({
         Classic, wholesome stories. No politics, no lectures &mdash; just imagination, kindness, and
         bedtime smiles.
       </p>
+      <div className="signed-in-row">
+        <span>Signed in as {email}</span>
+        <button type="button" className="link-button" onClick={onSignOut}>
+          Sign out
+        </button>
+      </div>
     </div>
   );
 }

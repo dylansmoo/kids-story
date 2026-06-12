@@ -174,7 +174,7 @@ function ProfileEditor({ initial, canDelete, onSave, onDelete, onCancel }: Profi
       <div className="editor-actions">
         {canDelete && !isNew && (
           <button type="button" className="nav-button danger" onClick={() => onDelete(profile.id)}>
-            Remove
+            {"\u{1F5D1}\u{FE0F}"} Delete child
           </button>
         )}
         <button

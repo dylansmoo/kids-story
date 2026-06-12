@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { generateAiStory } from "../ai";
 import { Avatar } from "../Avatar";
-import type { KidProfile } from "../profile";
+import { artStyleOf, artStyles, type KidProfile } from "../profile";
 import type { Story } from "../stories";
 import {
   buildStory,
@@ -30,15 +30,46 @@ const loadingMessages = [
   "Almost ready...",
 ];
 
+const funFacts = [
+  "Octopuses have three hearts!",
+  "A giraffe's tongue can be as long as your whole arm.",
+  "Honey never goes bad \u2014 even after a thousand years!",
+  "Butterflies taste things with their feet.",
+  "Sea otters hold hands while they sleep so they don't drift apart.",
+  "A group of flamingos is called a flamboyance.",
+  "Elephants can't jump \u2014 but they are wonderful swimmers!",
+  "Your heart beats about one hundred thousand times every day.",
+  "Some snails can nap for three whole years.",
+  "A sneeze zooms out faster than a race car.",
+  "Some penguins give a pebble to a penguin they like.",
+  "The Moon drifts away from Earth as fast as your fingernails grow.",
+  "Cows have best friends and feel sad without them.",
+  "Lightning is five times hotter than the surface of the Sun.",
+  "Dolphins call each other by name with special whistles.",
+  "Some frogs freeze solid in winter, then thaw out and hop away in spring!",
+  "Bees do a waggle dance to tell their friends where the flowers are.",
+  "Tigers have striped skin, not just striped fur.",
+  "There are more stars in the sky than grains of sand on every beach on Earth.",
+  "Sloths can take a whole month to finish one leaf lunch.",
+];
+
 function LoadingOverlay() {
   const [messageIndex, setMessageIndex] = useState(0);
+  const [factIndex, setFactIndex] = useState(() => Math.floor(Math.random() * funFacts.length));
 
   useEffect(() => {
-    const timer = setInterval(
+    const messageTimer = setInterval(
       () => setMessageIndex((index) => (index + 1) % loadingMessages.length),
       2400,
     );
-    return () => clearInterval(timer);
+    const factTimer = setInterval(
+      () => setFactIndex((index) => (index + 1) % funFacts.length),
+      5000,
+    );
+    return () => {
+      clearInterval(messageTimer);
+      clearInterval(factTimer);
+    };
   }, []);
 
   return (
@@ -49,13 +80,20 @@ function LoadingOverlay() {
         </span>
         <p className="gen-message">{loadingMessages[messageIndex]}</p>
         <p className="gen-hint">Magic stories take about half a minute.</p>
+        <div className="fun-fact">
+          <span className="fun-fact-label">Did you know?</span>
+          <p className="fun-fact-text">{funFacts[factIndex]}</p>
+        </div>
       </div>
     </div>
   );
 }
 
 function Builder({ kids, activeKid, onCreate, onBack }: BuilderProps) {
-  const [setup, setSetup] = useState<StorySetup>(defaultSetup);
+  const [setup, setSetup] = useState<StorySetup>(() => ({
+    ...defaultSetup,
+    artStyleId: artStyleOf(activeKid).id,
+  }));
   const [heroIds, setHeroIds] = useState<string[]>(activeKid ? [activeKid.id] : []);
   const [loading, setLoading] = useState(false);
   const [aiFailed, setAiFailed] = useState(false);
@@ -104,6 +142,11 @@ function Builder({ kids, activeKid, onCreate, onBack }: BuilderProps) {
         <span className="reader-title">Build a story</span>
         <span className="page-count" />
       </div>
+
+      <p className="picker-hint builder-intro">
+        The options are just ideas to get you started &mdash; pick &ldquo;Your own&rdquo; in any
+        section to write anything you like.
+      </p>
 
       {kids.length > 0 && (
         <section className="builder-section">
@@ -159,6 +202,19 @@ function Builder({ kids, activeKid, onCreate, onBack }: BuilderProps) {
             </button>
           ))}
         </div>
+        {setup.companionId === "custom" && (
+          <label className="inline-field">
+            Describe your companion
+            <input
+              className="hero-input"
+              value={setup.companionCustom}
+              onChange={(event) => set("companionCustom", event.target.value)}
+              placeholder="e.g. a rainbow robot dragon"
+              maxLength={60}
+              autoComplete="off"
+            />
+          </label>
+        )}
         {setup.companionId !== "none" && (
           <label className="inline-field">
             Companion's name <span className="optional-tag">optional</span>
@@ -166,7 +222,7 @@ function Builder({ kids, activeKid, onCreate, onBack }: BuilderProps) {
               className="hero-input"
               value={setup.companionName}
               onChange={(event) => set("companionName", event.target.value)}
-              placeholder={`e.g. your real ${companion.label.toLowerCase()}'s name`}
+              placeholder="e.g. your real pet's name"
               maxLength={24}
               autoComplete="off"
             />
@@ -190,6 +246,19 @@ function Builder({ kids, activeKid, onCreate, onBack }: BuilderProps) {
             </button>
           ))}
         </div>
+        {setup.placeId === "custom" && (
+          <label className="inline-field">
+            Describe the place
+            <input
+              className="hero-input"
+              value={setup.placeCustom}
+              onChange={(event) => set("placeCustom", event.target.value)}
+              placeholder="e.g. grandma's magical garden"
+              maxLength={60}
+              autoComplete="off"
+            />
+          </label>
+        )}
       </section>
 
       <section className="builder-section">
@@ -205,6 +274,41 @@ function Builder({ kids, activeKid, onCreate, onBack }: BuilderProps) {
             >
               <span className="big-chip-emoji">{option.emoji}</span>
               <span>{option.label}</span>
+            </button>
+          ))}
+        </div>
+        {setup.lessonId === "custom" && (
+          <label className="inline-field">
+            What should the story teach?
+            <input
+              className="hero-input"
+              value={setup.lessonCustom}
+              onChange={(event) => set("lessonCustom", event.target.value)}
+              placeholder="e.g. being patient while baking"
+              maxLength={80}
+              autoComplete="off"
+            />
+          </label>
+        )}
+      </section>
+
+      <section className="builder-section">
+        <h2 className="picker-heading">Illustration style</h2>
+        <div className="chip-grid">
+          {artStyles.map((style) => (
+            <button
+              key={style.id}
+              type="button"
+              className={setup.artStyleId === style.id ? "big-chip selected" : "big-chip"}
+              onClick={() => set("artStyleId", style.id)}
+              aria-pressed={setup.artStyleId === style.id}
+            >
+              {activeKid ? (
+                <Avatar profile={{ ...activeKid, artStyle: style.id }} size={48} />
+              ) : (
+                <span className="big-chip-emoji">{"\u{1F3A8}"}</span>
+              )}
+              <span>{style.label}</span>
             </button>
           ))}
         </div>
@@ -253,17 +357,30 @@ function Builder({ kids, activeKid, onCreate, onBack }: BuilderProps) {
         <p>
           A <strong>{length.label.toLowerCase()}</strong>{" "}
           <strong>{theme.label.toLowerCase()}</strong> at{" "}
-          <strong>{place.label.toLowerCase()}</strong>
+          <strong>
+            {setup.placeId === "custom"
+              ? setup.placeCustom.trim() || "your own place"
+              : place.label.toLowerCase()}
+          </strong>
           {setup.companionId !== "none" && (
             <>
               {" "}
-              with <strong>
-                {setup.companionName.trim() || `a ${companion.label.toLowerCase()}`}
+              with{" "}
+              <strong>
+                {setup.companionName.trim() ||
+                  (setup.companionId === "custom"
+                    ? setup.companionCustom.trim() || "your own companion"
+                    : `a ${companion.label.toLowerCase()}`)}
               </strong>
             </>
           )}
-          , about <strong>{lesson.label.toLowerCase()}</strong> &mdash; starring{" "}
-          <strong>{starring}</strong>.
+          , about{" "}
+          <strong>
+            {setup.lessonId === "custom"
+              ? setup.lessonCustom.trim() || "your own lesson"
+              : lesson.label.toLowerCase()}
+          </strong>{" "}
+          &mdash; starring <strong>{starring}</strong>.
         </p>
 
         {aiFailed ? (
