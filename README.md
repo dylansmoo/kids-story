@@ -5,17 +5,25 @@ them page by page. Built to start small, then add features along the way.
 
 ## MVP scope (current)
 
-- A small library of preset stories to choose from
-- A clean page-by-page reader (Back / Next)
-- Wholesome, classic, family-friendly content for kids under 7
-- Stories use a child-friendly hero without asking for pronouns
+- Set the hero's name once and every story stars your child by name
+- A library of 6 wholesome stories across themes: bravery, kindness, bedtime, sharing,
+  imagination, and helping
+- Favorites (heart a story; saved on the device)
+- A page-by-page reader with:
+  - large friendly text with the child's name highlighted
+  - a "say it together" line on every page for early readers
+  - progress dots, keyboard arrows, Back / Next
+- A celebration screen when the story ends
+- Print keepsake: print any story as a personalized mini-book
+- No accounts, no tracking; the hero name and favorites are stored locally
+- Classic, wholesome, family-friendly content; no pronoun questions
 
 ## Planned next
 
-- Personalizing stories with the child's name and favorites
-- More stories and themes
-- Saving favorites
-- Story generation later, once the core experience is right
+- More stories and seasonal packs
+- Favorite things woven into stories (pets, places, foods)
+- Audio read-along
+- Story generation with parent-set guardrails once the core experience is right
 
 ## Run locally
 
