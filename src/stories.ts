@@ -5,6 +5,10 @@ export interface StoryPage {
   readAloud: string;
   /** Scene emoji used as the page illustration placeholder. */
   emoji: string;
+  /** Scene description for the image model (AI-generated stories only). */
+  illustration?: string;
+  /** Generated illustration as a data URL, filled in as images finish painting. */
+  image?: string;
 }
 
 export interface Story {
@@ -16,6 +20,10 @@ export interface Story {
   emoji: string;
   minutes: number;
   pages: StoryPage[];
+  /** Set on stories created in the builder: the hero name(s) at creation time. */
+  heroName?: string;
+  /** Profile ids of the kids starring in this story. */
+  kidIds?: string[];
 }
 
 /** Used when no hero name has been set. Reads naturally anywhere a name appears. */

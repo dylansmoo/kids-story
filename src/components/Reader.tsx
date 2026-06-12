@@ -1,18 +1,33 @@
 import { useEffect, useState } from "react";
+import { Avatar } from "../Avatar";
 import { HeroText, heroName } from "../HeroText";
+import type { KidProfile } from "../profile";
 import { personalize, type Story } from "../stories";
 
 interface ReaderProps {
   story: Story;
-  name: string;
+  kids: KidProfile[];
+  activeKid: KidProfile | null;
   onExit: () => void;
 }
 
-function Reader({ story, name, onExit }: ReaderProps) {
+function Reader({ story, kids, activeKid, onExit }: ReaderProps) {
   // `page` ranges 0..pages.length; the final value shows the celebration screen.
   const [page, setPage] = useState(0);
   const pageCount = story.pages.length;
   const finished = page >= pageCount;
+  const name = story.heroName ?? activeKid?.name ?? "";
+
+  const heroes = story.kidIds
+    ? kids.filter((kid) => story.kidIds?.includes(kid.id))
+    : activeKid
+      ? [activeKid]
+      : [];
+  // Highlight each hero's name, plus parts of a joined heroName for deleted profiles.
+  const highlightNames = [
+    ...heroes.map((kid) => kid.name),
+    ...(story.heroName ? story.heroName.split(/,\s*|\s+and\s+/) : []),
+  ];
 
   const goBack = () => setPage((current) => Math.max(0, current - 1));
   const goNext = () => setPage((current) => Math.min(pageCount, current + 1));
@@ -37,7 +52,7 @@ function Reader({ story, name, onExit }: ReaderProps) {
             &larr; All stories
           </button>
           <span className="reader-title">
-            <HeroText text={story.title} name={name} />
+            <HeroText text={story.title} name={name} highlightNames={highlightNames} />
           </span>
           <span className="page-count">
             {finished ? "The end" : `${page + 1} / ${pageCount}`}
@@ -47,16 +62,32 @@ function Reader({ story, name, onExit }: ReaderProps) {
         {current ? (
           <div className="reader-page">
             <div className="reader-illustration" aria-hidden="true">
-              {current.emoji}
+              {current.image ? (
+                <img className="scene-img" src={current.image} alt="" />
+              ) : (
+                <>
+                  <span className="scene-emoji">{current.emoji}</span>
+                  {current.illustration && (
+                    <span className="painting-note">{"\u{1F3A8}"} painting this page...</span>
+                  )}
+                </>
+              )}
+              {heroes.length > 0 && (
+                <span className="scene-avatar">
+                  {heroes.map((kid) => (
+                    <Avatar key={kid.id} profile={kid} size={heroes.length > 1 ? 64 : 84} />
+                  ))}
+                </span>
+              )}
             </div>
             <p className="reader-text">
-              <HeroText text={current.text} name={name} />
+              <HeroText text={current.text} name={name} highlightNames={highlightNames} />
             </p>
             <div className="read-aloud">
               <span className="read-aloud-label">Say it together</span>
               <span className="read-aloud-line">
                 &ldquo;
-                <HeroText text={current.readAloud} name={name} />
+                <HeroText text={current.readAloud} name={name} highlightNames={highlightNames} />
                 &rdquo;
               </span>
             </div>
@@ -70,8 +101,9 @@ function Reader({ story, name, onExit }: ReaderProps) {
               Hooray, <span className="hero-name">{heroName(name)}</span>!
             </h2>
             <p className="finish-text">
-              You were the hero of <HeroText text={story.title} name={name} />. Great reading
-              together!
+              You were the hero{heroes.length > 1 ? "es" : ""} of{" "}
+              <HeroText text={story.title} name={name} highlightNames={highlightNames} />. Great
+              reading together!
             </p>
             <div className="finish-actions">
               <button type="button" className="nav-button" onClick={() => setPage(0)}>
@@ -121,7 +153,11 @@ function Reader({ story, name, onExit }: ReaderProps) {
         </div>
         {story.pages.map((storyPage, index) => (
           <div className="print-page" key={index}>
-            <div className="print-page-emoji">{storyPage.emoji}</div>
+            {storyPage.image ? (
+              <img className="print-page-img" src={storyPage.image} alt="" />
+            ) : (
+              <div className="print-page-emoji">{storyPage.emoji}</div>
+            )}
             <p className="print-page-text">{personalize(storyPage.text, name)}</p>
             <p className="print-page-aloud">Say it together: &ldquo;{personalize(storyPage.readAloud, name)}&rdquo;</p>
             <span className="print-page-number">{index + 1}</span>
