@@ -1,6 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { narratePage } from "../ai";
 import { Avatar } from "../Avatar";
 import { HeroText, heroName } from "../HeroText";
+import { downloadStoryPdf } from "../pdf";
 import type { KidProfile } from "../profile";
 import { personalize, type Story } from "../stories";
 
@@ -31,6 +33,56 @@ function Reader({ story, kids, activeKid, onExit }: ReaderProps) {
 
   const goBack = () => setPage((current) => Math.max(0, current - 1));
   const goNext = () => setPage((current) => Math.min(pageCount, current + 1));
+
+  // Read-aloud narration for the current page.
+  const audioCache = useRef<Map<number, string>>(new Map());
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [narrating, setNarrating] = useState(false);
+  const [audioLoading, setAudioLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+
+  const stopNarration = () => {
+    audioRef.current?.pause();
+    audioRef.current = null;
+    setNarrating(false);
+  };
+
+  const toggleNarration = async () => {
+    if (narrating) {
+      stopNarration();
+      return;
+    }
+    const pageIndex = page;
+    let url = audioCache.current.get(pageIndex) ?? null;
+    if (!url) {
+      setAudioLoading(true);
+      url = await narratePage(personalize(story.pages[pageIndex].text, name));
+      setAudioLoading(false);
+      if (url) audioCache.current.set(pageIndex, url);
+    }
+    if (!url) return;
+    const audio = new Audio(url);
+    audioRef.current = audio;
+    audio.onended = () => setNarrating(false);
+    void audio.play();
+    setNarrating(true);
+  };
+
+  // Stop audio when the page changes or the reader closes.
+  useEffect(() => {
+    stopNarration();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page]);
+  useEffect(() => () => stopNarration(), []);
+
+  const downloadPdf = async () => {
+    setDownloading(true);
+    try {
+      await downloadStoryPdf(story, name);
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -80,6 +132,16 @@ function Reader({ story, kids, activeKid, onExit }: ReaderProps) {
                 </span>
               )}
             </div>
+            <button
+              type="button"
+              className="narrate-button"
+              onClick={toggleNarration}
+              disabled={audioLoading}
+              aria-label={narrating ? "Stop reading aloud" : "Read this page to me"}
+              title={narrating ? "Stop" : "Read to me"}
+            >
+              {audioLoading ? "\u23F3" : narrating ? "\u23F8\u{FE0F}" : "\u{1F50A}"}
+            </button>
             <p className="reader-text">
               <HeroText text={current.text} name={name} highlightNames={highlightNames} />
             </p>
@@ -112,7 +174,10 @@ function Reader({ story, kids, activeKid, onExit }: ReaderProps) {
                 Read again
               </button>
               <button type="button" className="nav-button" onClick={() => window.print()}>
-                Print keepsake
+                Print
+              </button>
+              <button type="button" className="nav-button" onClick={downloadPdf} disabled={downloading}>
+                {downloading ? "Making PDF..." : "Download PDF"}
               </button>
               <button type="button" className="nav-button primary" onClick={onExit}>
                 More stories

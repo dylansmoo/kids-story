@@ -3,6 +3,30 @@ export interface JsonResult {
   body: unknown;
 }
 
+/**
+ * Soft per-IP daily limiter. In-memory per serverless instance, so it's a
+ * cost cushion rather than real security — proper limits come with accounts.
+ */
+const usage = new Map<string, { day: string; count: number }>();
+
+export const withinLimit = (kind: string, ip: string, maxPerDay: number): boolean => {
+  const day = new Date().toISOString().slice(0, 10);
+  const key = `${kind}:${ip}`;
+  const entry = usage.get(key);
+  if (!entry || entry.day !== day) {
+    usage.set(key, { day, count: 1 });
+    return true;
+  }
+  entry.count += 1;
+  return entry.count <= maxPerDay;
+};
+
+export const ipFrom = (headers: Record<string, string | string[] | undefined>): string => {
+  const forwarded = headers["x-forwarded-for"];
+  const raw = Array.isArray(forwarded) ? forwarded[0] : forwarded;
+  return raw?.split(",")[0]?.trim() || "unknown";
+};
+
 const SYSTEM_PROMPT = `You are a children's story creator. You write warm, imaginative, personalized read-aloud stories for young children, with one or more real children starring as the heroes.
 
 Strict content rules:
@@ -240,6 +264,52 @@ const generateImage = async (
   const result = (await response.json()) as { data?: Array<{ b64_json?: string }> };
   const b64 = result.data?.[0]?.b64_json;
   return b64 ? { ok: true, status: 200, b64 } : { ok: false, status: 502 };
+};
+
+export interface NarrationRequestBody {
+  text?: string;
+}
+
+/** Generates warm read-aloud narration audio for one page of story text. */
+export const createNarration = async (
+  body: NarrationRequestBody,
+  apiKey: string,
+): Promise<JsonResult> => {
+  const text = body.text?.trim();
+  if (!text || text.length > 1200) {
+    return { status: 400, body: { error: "missing_text" } };
+  }
+
+  try {
+    const response = await fetch("https://api.openai.com/v1/audio/speech", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: "tts-1",
+        voice: "nova",
+        input: text,
+        response_format: "mp3",
+        speed: 0.92,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error("OpenAI narration error", response.status, await response.text());
+      return { status: 502, body: { error: "narration_failed" } };
+    }
+
+    const buffer = Buffer.from(await response.arrayBuffer());
+    return {
+      status: 200,
+      body: { audio: `data:audio/mpeg;base64,${buffer.toString("base64")}` },
+    };
+  } catch (error) {
+    console.error("Narration failed", error);
+    return { status: 502, body: { error: "narration_failed" } };
+  }
 };
 
 export const createIllustration = async (

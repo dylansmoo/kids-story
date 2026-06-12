@@ -1,10 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import {
-  createIllustration,
-  ipFrom,
-  withinLimit,
-  type IllustrationRequestBody,
-} from "./_lib";
+import { createNarration, ipFrom, withinLimit, type NarrationRequestBody } from "./_lib";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
@@ -18,14 +13,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
-  if (!withinLimit("illustration", ipFrom(req.headers), 300)) {
+  if (!withinLimit("narrate", ipFrom(req.headers), 400)) {
     res.status(429).json({ error: "rate_limited" });
     return;
   }
 
-  const result = await createIllustration(
-    (req.body ?? {}) as IllustrationRequestBody,
-    apiKey,
-  );
+  const result = await createNarration((req.body ?? {}) as NarrationRequestBody, apiKey);
   res.status(result.status).json(result.body);
 }

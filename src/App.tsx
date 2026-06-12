@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { characterSheet, compressImage, illustratePage } from "./ai";
 import Builder from "./components/Builder";
 import Home from "./components/Home";
@@ -174,14 +174,19 @@ function App() {
     );
   };
 
+  /** Stories whose remaining illustrations should stop (deleted mid-paint). */
+  const stoppedPainting = useRef<Set<string>>(new Set());
+
   /** Paints AI story pages one by one; the reader updates live as images land. */
   const illustrateStory = async (story: Story, heroes: KidProfile[]) => {
     const character = characterSheet(heroes);
     const style = story.artStyle ?? artStyleOf(heroes[0] ?? null).prompt;
     for (let index = 0; index < story.pages.length; index += 1) {
+      if (stoppedPainting.current.has(story.id)) return;
       const scene = story.pages[index].illustration;
       if (!scene) continue;
       const image = await illustratePage(scene, character, style);
+      if (stoppedPainting.current.has(story.id)) return;
       if (image) {
         const compressed = await compressImage(image);
         setPageImage(story.id, index, compressed);
@@ -200,6 +205,7 @@ function App() {
 
   const deleteStory = (storyId: string) => {
     if (!window.confirm("Delete this story?")) return;
+    stoppedPainting.current.add(storyId);
     setMyStories((current) => current.filter((story) => story.id !== storyId));
   };
 

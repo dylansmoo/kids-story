@@ -56,6 +56,7 @@ const pick = <T extends { id: string }>(options: T[], id: string): T =>
 export const generateAiStory = async (
   setup: StorySetup,
   kids: KidProfile[],
+  signal?: AbortSignal,
 ): Promise<Story> => {
   const theme = pick(themeOptions, setup.themeId);
   const companion = pick(companionOptions, setup.companionId);
@@ -82,6 +83,7 @@ export const generateAiStory = async (
 
   const response = await fetch("/api/story", {
     method: "POST",
+    signal,
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       kids: heroes.map((kid) => ({
@@ -168,6 +170,22 @@ export const illustratePage = async (
     if (!response.ok) return null;
     const data = (await response.json()) as { image?: string };
     return data.image ?? null;
+  } catch {
+    return null;
+  }
+};
+
+/** Fetches narration audio for a page of text; returns an audio data URL or null. */
+export const narratePage = async (text: string): Promise<string | null> => {
+  try {
+    const response = await fetch("/api/narrate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+    });
+    if (!response.ok) return null;
+    const data = (await response.json()) as { audio?: string };
+    return data.audio ?? null;
   } catch {
     return null;
   }

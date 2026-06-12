@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin } from "vite";
-import { createIllustration, createStory } from "./api/_lib";
+import { createIllustration, createNarration, createStory } from "./api/_lib";
 
 const readApiKey = (root: string): string | undefined => {
   if (process.env.OPENAI_API_KEY) return process.env.OPENAI_API_KEY;
@@ -21,7 +21,7 @@ const localApi = (): Plugin => ({
   configureServer(server) {
     server.middlewares.use(async (req, res, next) => {
       const url = req.url?.split("?")[0];
-      if (url !== "/api/story" && url !== "/api/illustration") {
+      if (url !== "/api/story" && url !== "/api/illustration" && url !== "/api/narrate") {
         next();
         return;
       }
@@ -51,7 +51,9 @@ const localApi = (): Plugin => ({
         const result =
           url === "/api/story"
             ? await createStory(body, apiKey)
-            : await createIllustration(body, apiKey);
+            : url === "/api/narrate"
+              ? await createNarration(body, apiKey)
+              : await createIllustration(body, apiKey);
         respond(result.status, result.body);
       } catch (error) {
         console.error("Local API error", error);

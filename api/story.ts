@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { createStory, type StoryRequestBody } from "./_lib";
+import { createStory, ipFrom, withinLimit, type StoryRequestBody } from "./_lib";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
@@ -10,6 +10,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     res.status(503).json({ error: "not_configured" });
+    return;
+  }
+
+  if (!withinLimit("story", ipFrom(req.headers), 30)) {
+    res.status(429).json({ error: "rate_limited" });
     return;
   }
 
