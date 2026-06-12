@@ -184,6 +184,19 @@ function Builder({ kids, activeKid, onCreate, onBack }: BuilderProps) {
             </button>
           ))}
         </div>
+        {setup.themeId === "custom" && (
+          <label className="inline-field">
+            Describe the kind of story
+            <input
+              className="hero-input"
+              value={setup.themeCustom}
+              onChange={(event) => set("themeCustom", event.target.value)}
+              placeholder="e.g. a pirate treasure hunt"
+              maxLength={60}
+              autoComplete="off"
+            />
+          </label>
+        )}
       </section>
 
       <section className="builder-section">
@@ -336,6 +349,31 @@ function Builder({ kids, activeKid, onCreate, onBack }: BuilderProps) {
       </section>
 
       <section className="builder-section">
+        <h2 className="picker-heading">Say-it-together lines?</h2>
+        <p className="picker-hint">
+          A short line on each page (like &ldquo;Whoosh, whoosh!&rdquo;) for kids to shout along.
+        </p>
+        <div className="chip-row">
+          <button
+            type="button"
+            className={!setup.readTogether ? "chip selected" : "chip"}
+            onClick={() => set("readTogether", false)}
+            aria-pressed={!setup.readTogether}
+          >
+            No, just the story
+          </button>
+          <button
+            type="button"
+            className={setup.readTogether ? "chip selected" : "chip"}
+            onClick={() => set("readTogether", true)}
+            aria-pressed={setup.readTogether}
+          >
+            Yes, include them
+          </button>
+        </div>
+      </section>
+
+      <section className="builder-section">
         <h2 className="picker-heading">
           Your plot idea or extra details <span className="optional-tag">optional</span>
         </h2>
@@ -356,7 +394,12 @@ function Builder({ kids, activeKid, onCreate, onBack }: BuilderProps) {
       <div className="builder-summary">
         <p>
           A <strong>{length.label.toLowerCase()}</strong>{" "}
-          <strong>{theme.label.toLowerCase()}</strong> at{" "}
+          <strong>
+            {setup.themeId === "custom"
+              ? setup.themeCustom.trim() || "your own story"
+              : theme.label.toLowerCase()}
+          </strong>{" "}
+          at{" "}
           <strong>
             {setup.placeId === "custom"
               ? setup.placeCustom.trim() || "your own place"
