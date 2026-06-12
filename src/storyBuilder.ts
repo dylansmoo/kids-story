@@ -1,4 +1,4 @@
-import { hairWordOf, kidWordOf, type KidProfile } from "./profile";
+import { hairWordOf, type KidProfile } from "./profile";
 import type { Story, StoryPage } from "./stories";
 
 export interface ThemeOption {
@@ -12,7 +12,7 @@ export interface CompanionOption {
   id: string;
   label: string;
   emoji: string;
-  /** Phrase used in sentences, e.g. "little puppy". */
+  /** Phrase used in sentences, e.g. "little puppy". Empty for "none". */
   phrase: string;
   /** A playful thing the companion does mid-story. */
   antic: string;
@@ -32,7 +32,8 @@ export interface LessonOption {
   id: string;
   label: string;
   emoji: string;
-  challenge: (companion: string) => string;
+  /** Challenge line; companionRef is e.g. "the little puppy" / "Scout", or null when no companion. */
+  challenge: (companionRef: string | null) => string;
   choice: string;
   cheer: string;
   moral: string;
@@ -49,9 +50,15 @@ export const companionOptions: CompanionOption[] = [
   { id: "puppy", label: "Puppy", emoji: "\u{1F436}", phrase: "little puppy", antic: "chased its own waggly tail" },
   { id: "kitten", label: "Kitten", emoji: "\u{1F431}", phrase: "fluffy kitten", antic: "pounced on a dancing leaf" },
   { id: "bunny", label: "Bunny", emoji: "\u{1F430}", phrase: "hoppy bunny", antic: "did three happy hops in a row" },
-  { id: "dragon", label: "Friendly Dragon", emoji: "\u{1F432}", phrase: "friendly dragon", antic: "blew a tiny, warm smoke ring" },
+  { id: "dragon", label: "Dragon", emoji: "\u{1F432}", phrase: "friendly dragon", antic: "blew a tiny, warm smoke ring" },
   { id: "teddy", label: "Teddy Bear", emoji: "\u{1F9F8}", phrase: "brave teddy bear", antic: "tumbled head over heels" },
   { id: "pony", label: "Pony", emoji: "\u{1F434}", phrase: "gentle pony", antic: "swished its swishy tail" },
+  { id: "fairy", label: "Fairy", emoji: "\u{1F9DA}", phrase: "kind little fairy", antic: "sprinkled a puff of sparkly dust" },
+  { id: "superhero", label: "Superhero", emoji: "\u{1F9B8}", phrase: "small superhero friend", antic: "zoomed one happy loop in a tiny cape" },
+  { id: "robot", label: "Robot", emoji: "\u{1F916}", phrase: "friendly robot", antic: "beeped a cheerful boop-boop tune" },
+  { id: "monster", label: "Silly Monster", emoji: "\u{1F47E}", phrase: "fuzzy little monster", antic: "wiggled its fuzzy ears until everyone giggled" },
+  { id: "dino", label: "Dinosaur", emoji: "\u{1F995}", phrase: "baby dinosaur", antic: "stomped one tiny, happy stomp" },
+  { id: "none", label: "No companion", emoji: "\u{1F31F}", phrase: "", antic: "" },
 ];
 
 export const placeOptions: PlaceOption[] = [
@@ -104,8 +111,10 @@ export const lessonOptions: LessonOption[] = [
     id: "brave",
     label: "Being brave",
     emoji: "\u{1F4AA}",
-    challenge: (companion) =>
-      `Suddenly the way ahead looked big and dark. The ${companion} hid behind {name}.`,
+    challenge: (companionRef) =>
+      companionRef
+        ? `Suddenly the way ahead looked big and dark. ${cap(companionRef)} hid behind {name}.`
+        : "Suddenly the way ahead looked big and dark. {name} stopped and looked and looked.",
     choice: "{name} took one deep breath and one careful step. Then another. Brave hearts go first!",
     cheer: "I can be brave!",
     moral: "Being brave means trying even when something feels big.",
@@ -180,17 +189,23 @@ export const lengthOptions: LengthOption[] = [
 export interface StorySetup {
   themeId: string;
   companionId: string;
+  /** Optional name the parent gave the companion (e.g. the family dog's name). */
+  companionName: string;
   placeId: string;
   lessonId: string;
   lengthId: string;
+  /** Optional free-text details; used by AI generation only. */
+  extra: string;
 }
 
 export const defaultSetup: StorySetup = {
   themeId: themeOptions[0].id,
   companionId: companionOptions[0].id,
+  companionName: "",
   placeId: placeOptions[0].id,
   lessonId: lessonOptions[0].id,
   lengthId: lengthOptions[1].id,
+  extra: "",
 };
 
 const cap = (text: string): string => text.charAt(0).toUpperCase() + text.slice(1);
@@ -198,16 +213,45 @@ const cap = (text: string): string => text.charAt(0).toUpperCase() + text.slice(
 const pick = <T extends { id: string }>(options: T[], id: string): T =>
   options.find((option) => option.id === id) ?? options[0];
 
+/** Joins kid names into natural English: "Tim", "Tim and Ava", "Tim, Ava and Sam". */
+export const joinNames = (names: string[]): string => {
+  const clean = names.map((name) => name.trim()).filter(Boolean);
+  if (clean.length === 0) return "";
+  if (clean.length === 1) return clean[0];
+  return `${clean.slice(0, -1).join(", ")} and ${clean[clean.length - 1]}`;
+};
+
 /** Assembles a complete personalized story from the parent's selections. */
-export const buildStory = (setup: StorySetup, profile: KidProfile | null): Story => {
+export const buildStory = (setup: StorySetup, kids: KidProfile[]): Story => {
   const theme = pick(themeOptions, setup.themeId);
   const companion = pick(companionOptions, setup.companionId);
   const place = pick(placeOptions, setup.placeId);
   const lesson = pick(lessonOptions, setup.lessonId);
+  const length = pick(lengthOptions, setup.lengthId);
 
-  const kidWord = kidWordOf(profile);
-  const hairWord = profile ? hairWordOf(profile) : "soft";
-  const glassesBit = profile?.glasses ? " pushed up two round glasses," : "";
+  const heroes = kids.filter((kid) => kid.name.trim().length > 0);
+  const multi = heroes.length > 1;
+  const heroNames = joinNames(heroes.map((kid) => kid.name));
+
+  const hasCompanion = companion.id !== "none";
+  const petName = setup.companionName.trim();
+  // "Scout" once named, otherwise "the little puppy".
+  const ref = hasCompanion ? (petName || `the ${companion.phrase}`) : null;
+  const refIntro = hasCompanion
+    ? petName
+      ? `${petName} the ${companion.phrase}`
+      : `the ${companion.phrase}`
+    : null;
+
+  const kidWord = multi
+    ? "heroes"
+    : heroes[0]?.gender === "boy"
+      ? "boy"
+      : heroes[0]?.gender === "girl"
+        ? "girl"
+        : "hero";
+  const hairWord = heroes[0] ? hairWordOf(heroes[0]) : "soft";
+  const glassesBit = heroes[0]?.glasses ? " pushed up two round glasses," : "";
 
   let opener: string;
   let openCheer: string;
@@ -215,37 +259,50 @@ export const buildStory = (setup: StorySetup, profile: KidProfile | null): Story
   let endEmoji: string;
   let title: string;
 
+  const withRef = (withCompanion: string, alone: string) =>
+    hasCompanion ? withCompanion : alone;
+
   switch (theme.id) {
     case "bedtime":
-      opener = `The stars were waking up, so {name} and the ${companion.phrase} tiptoed off for one last quiet peek at ${place.phrase}.`;
+      opener = withRef(
+        `The stars were waking up, so {name} and ${refIntro} tiptoed off for one last quiet peek at ${place.phrase}.`,
+        `The stars were waking up, so {name} tiptoed off for one last quiet peek at ${place.phrase}.`,
+      );
       openCheer = "Tiptoe, tiptoe!";
-      ending = `Then it was time for bed. {name} snuggled deep under the blanket, the sleepiest ${kidWord} in town. ${lesson.moral} Goodnight, {name}.`;
+      ending = `Then it was time for bed. {name} snuggled deep under the blanket${multi ? "s" : ""}, the sleepiest ${kidWord} in town. ${lesson.moral} Goodnight, {name}.`;
       endEmoji = "\u{1F634}";
       title = `Goodnight, ${place.label}`;
       break;
     case "imagination":
-      opener = `{name} closed two eyes and counted: one, two, three! Poof \u2014 the living room turned into ${place.phrase}, and the ${companion.phrase} came too!`;
+      opener = withRef(
+        `{name} closed ${multi ? "every eye tight" : "two eyes"} and counted: one, two, three! Poof \u2014 the living room turned into ${place.phrase}, and ${refIntro} came too!`,
+        `{name} closed ${multi ? "every eye tight" : "two eyes"} and counted: one, two, three! Poof \u2014 the living room turned into ${place.phrase}!`,
+      );
       openCheer = "One, two, three!";
-      ending = `With one more blink, {name} was home again, grinning the biggest grin. ${lesson.moral} What will tomorrow become?`;
+      ending = `With one more blink, {name} ${multi ? "were" : "was"} home again, grinning the biggest grin. ${lesson.moral} What will tomorrow become?`;
       endEmoji = "\u{1F31F}";
       title = `{name}'s Make-Believe ${place.label}`;
       break;
     case "helping":
-      opener = `{name} pulled on big helper boots and called the ${companion.phrase}. ${cap(place.phrase)} needed a helper today!`;
+      opener = withRef(
+        `{name} pulled on big helper boots and called ${refIntro}. ${cap(place.phrase)} needed a helper today!`,
+        `{name} pulled on big helper boots. ${cap(place.phrase)} needed a helper today!`,
+      );
       openCheer = "I can help!";
-      ending = `\u201CWhat a wonderful helper!\u201D everyone cheered. {name} stood tall and proud, the best helper ${kidWord} around. ${lesson.moral}`;
+      ending = `\u201CWhat a wonderful helper${multi ? "s" : ""}!\u201D everyone cheered. {name} stood tall and proud, the best helper ${kidWord} around. ${lesson.moral}`;
       endEmoji = "\u{1F31F}";
       title = `{name}'s Big Helper Day`;
       break;
     default:
-      opener = `One bright morning, {name} packed a tiny backpack and called the ${companion.phrase}. Today they would explore ${place.phrase}!`;
+      opener = withRef(
+        `One bright morning, {name} packed a tiny backpack and called ${refIntro}. Today they would explore ${place.phrase}!`,
+        `One bright morning, {name} packed a tiny backpack. Today was the day to explore ${place.phrase}!`,
+      );
       openCheer = "Let's go!";
       ending = `{name} marched home, the bravest ${kidWord} in the whole town. ${lesson.moral}`;
       endEmoji = "\u{1F3E1}";
       title = `{name} and the ${place.label} Adventure`;
   }
-
-  const length = pick(lengthOptions, setup.lengthId);
 
   const openerPage: StoryPage = { text: opener, readAloud: openCheer, emoji: theme.emoji };
   const sightPage: StoryPage = {
@@ -253,13 +310,19 @@ export const buildStory = (setup: StorySetup, profile: KidProfile | null): Story
     readAloud: "Wow!",
     emoji: place.emoji,
   };
-  const anticPage: StoryPage = {
-    text: `The ${companion.phrase} ${companion.antic}. {name} laughed, patted down ${hairWord} hair,${glassesBit} and clapped along.`,
-    readAloud: "Ha ha ha!",
-    emoji: companion.emoji,
-  };
+  const anticPage: StoryPage = hasCompanion
+    ? {
+        text: `${cap(ref!)} ${companion.antic}. {name} laughed, patted down ${hairWord} hair,${glassesBit} and clapped along.`,
+        readAloud: "Ha ha ha!",
+        emoji: companion.emoji,
+      }
+    : {
+        text: `{name} did a twirl, a hop, and one very silly wiggle dance. Then {name} patted down ${hairWord} hair${glassesBit ? "," + glassesBit.slice(0, -1) : ""} and giggled.`,
+        readAloud: "Wiggle, wiggle!",
+        emoji: "\u{1F483}",
+      };
   const challengePage: StoryPage = {
-    text: lesson.challenge(companion.phrase),
+    text: lesson.challenge(ref),
     readAloud: "Uh oh!",
     emoji: "\u{1F62E}",
   };
@@ -269,7 +332,9 @@ export const buildStory = (setup: StorySetup, profile: KidProfile | null): Story
     emoji: lesson.emoji,
   };
   const resolutionPage: StoryPage = {
-    text: `And just like that, everything was better than before. The ${companion.phrase} did a happy dance around {name}.`,
+    text: hasCompanion
+      ? `And just like that, everything was better than before. ${cap(ref!)} did a happy dance around {name}.`
+      : `And just like that, everything was better than before. {name} did a happy dance right on the spot.`,
     readAloud: "Hooray!",
     emoji: "\u{1F389}",
   };
@@ -277,17 +342,23 @@ export const buildStory = (setup: StorySetup, profile: KidProfile | null): Story
 
   // Extra pages used only for long stories.
   const peekabooPage: StoryPage = {
-    text: `{name} and the ${companion.phrase} played peek-a-boo behind the biggest thing they could find. Found you! Found you!`,
+    text: hasCompanion
+      ? `{name} and ${ref} played peek-a-boo behind the biggest thing they could find. Found you! Found you!`
+      : `{name} played peek-a-boo behind the biggest thing around. Peek! Found you!`,
     readAloud: "Peek-a-boo!",
     emoji: "\u{1F648}",
   };
   const restPage: StoryPage = {
-    text: `Then it was time for a tiny rest. The ${companion.phrase} snuggled up close, and {name} hummed a quiet song.`,
+    text: hasCompanion
+      ? `Then it was time for a tiny rest. ${cap(ref!)} snuggled up close, and {name} hummed a quiet song.`
+      : `Then it was time for a tiny rest. {name} found a soft spot and hummed a quiet song.`,
     readAloud: "Snuggle time!",
     emoji: "\u{1F60A}",
   };
   const songPage: StoryPage = {
-    text: `All the way back, {name} and the ${companion.phrase} sang a happy little song. La la la, what a day!`,
+    text: hasCompanion
+      ? `All the way back, {name} and ${ref} sang a happy little song. La la la, what a day!`
+      : `All the way back, {name} sang a happy little song. La la la, what a day!`,
     readAloud: "La la la!",
     emoji: "\u{1F3B6}",
   };
@@ -318,15 +389,26 @@ export const buildStory = (setup: StorySetup, profile: KidProfile | null): Story
             endingPage,
           ];
 
+  const companionLabel =
+    companion.id === "none"
+      ? "solo"
+      : petName
+        ? `${companion.label.toLowerCase()} ${petName}`
+        : `a ${companion.label.toLowerCase()}`;
+
   return {
     id: `my-${Date.now()}`,
     title,
-    subtitle: `A ${lesson.label.toLowerCase()} story with a ${companion.label.toLowerCase()}`,
+    subtitle:
+      companion.id === "none"
+        ? `A ${lesson.label.toLowerCase()} story`
+        : `A ${lesson.label.toLowerCase()} story with ${companionLabel}`,
     theme: theme.label,
     accent: theme.accent,
-    emoji: companion.emoji,
+    emoji: companion.id === "none" ? theme.emoji : companion.emoji,
     minutes: Math.max(2, Math.round(pages.length / 2)),
     pages,
-    heroName: profile?.name?.trim() || undefined,
+    heroName: heroNames || undefined,
+    kidIds: heroes.map((kid) => kid.id),
   };
 };

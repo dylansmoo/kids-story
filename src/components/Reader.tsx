@@ -6,16 +6,28 @@ import { personalize, type Story } from "../stories";
 
 interface ReaderProps {
   story: Story;
-  profile: KidProfile | null;
+  kids: KidProfile[];
+  activeKid: KidProfile | null;
   onExit: () => void;
 }
 
-function Reader({ story, profile, onExit }: ReaderProps) {
+function Reader({ story, kids, activeKid, onExit }: ReaderProps) {
   // `page` ranges 0..pages.length; the final value shows the celebration screen.
   const [page, setPage] = useState(0);
   const pageCount = story.pages.length;
   const finished = page >= pageCount;
-  const name = story.heroName ?? profile?.name ?? "";
+  const name = story.heroName ?? activeKid?.name ?? "";
+
+  const heroes = story.kidIds
+    ? kids.filter((kid) => story.kidIds?.includes(kid.id))
+    : activeKid
+      ? [activeKid]
+      : [];
+  // Highlight each hero's name, plus parts of a joined heroName for deleted profiles.
+  const highlightNames = [
+    ...heroes.map((kid) => kid.name),
+    ...(story.heroName ? story.heroName.split(/,\s*|\s+and\s+/) : []),
+  ];
 
   const goBack = () => setPage((current) => Math.max(0, current - 1));
   const goNext = () => setPage((current) => Math.min(pageCount, current + 1));
@@ -40,7 +52,7 @@ function Reader({ story, profile, onExit }: ReaderProps) {
             &larr; All stories
           </button>
           <span className="reader-title">
-            <HeroText text={story.title} name={name} />
+            <HeroText text={story.title} name={name} highlightNames={highlightNames} />
           </span>
           <span className="page-count">
             {finished ? "The end" : `${page + 1} / ${pageCount}`}
@@ -60,20 +72,22 @@ function Reader({ story, profile, onExit }: ReaderProps) {
                   )}
                 </>
               )}
-              {profile && (
+              {heroes.length > 0 && (
                 <span className="scene-avatar">
-                  <Avatar profile={profile} size={84} />
+                  {heroes.map((kid) => (
+                    <Avatar key={kid.id} profile={kid} size={heroes.length > 1 ? 64 : 84} />
+                  ))}
                 </span>
               )}
             </div>
             <p className="reader-text">
-              <HeroText text={current.text} name={name} />
+              <HeroText text={current.text} name={name} highlightNames={highlightNames} />
             </p>
             <div className="read-aloud">
               <span className="read-aloud-label">Say it together</span>
               <span className="read-aloud-line">
                 &ldquo;
-                <HeroText text={current.readAloud} name={name} />
+                <HeroText text={current.readAloud} name={name} highlightNames={highlightNames} />
                 &rdquo;
               </span>
             </div>
@@ -87,8 +101,9 @@ function Reader({ story, profile, onExit }: ReaderProps) {
               Hooray, <span className="hero-name">{heroName(name)}</span>!
             </h2>
             <p className="finish-text">
-              You were the hero of <HeroText text={story.title} name={name} />. Great reading
-              together!
+              You were the hero{heroes.length > 1 ? "es" : ""} of{" "}
+              <HeroText text={story.title} name={name} highlightNames={highlightNames} />. Great
+              reading together!
             </p>
             <div className="finish-actions">
               <button type="button" className="nav-button" onClick={() => setPage(0)}>

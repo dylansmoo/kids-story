@@ -20,8 +20,10 @@ export interface Story {
   emoji: string;
   minutes: number;
   pages: StoryPage[];
-  /** Set on stories created in the builder: the hero's name at creation time. */
+  /** Set on stories created in the builder: the hero name(s) at creation time. */
   heroName?: string;
+  /** Profile ids of the kids starring in this story. */
+  kidIds?: string[];
 }
 
 /** Used when no hero name has been set. Reads naturally anywhere a name appears. */

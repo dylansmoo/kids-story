@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { characterSheet, compressImage, illustratePage } from "./ai";
+import AgeGate from "./components/AgeGate";
 import Builder from "./components/Builder";
 import Home from "./components/Home";
 import ProfileEditor from "./components/ProfileEditor";
@@ -13,6 +14,7 @@ const FAVORITES_KEY = "lhs:favorites";
 const MY_STORIES_KEY = "lhs:myStories";
 const LEGACY_NAME_KEY = "lhs:heroName";
 const THEME_KEY = "lhs:theme";
+const ADULT_KEY = "lhs:adultConfirmed";
 
 type View =
   | { screen: "home" }
@@ -63,6 +65,14 @@ function App() {
   const [theme, setTheme] = useState<"light" | "dark">(() =>
     localStorage.getItem(THEME_KEY) === "dark" ? "dark" : "light",
   );
+  const [adultConfirmed, setAdultConfirmed] = useState(
+    () => localStorage.getItem(ADULT_KEY) === "true",
+  );
+
+  const confirmAdult = () => {
+    localStorage.setItem(ADULT_KEY, "true");
+    setAdultConfirmed(true);
+  };
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -127,9 +137,9 @@ function App() {
   };
 
   /** Paints AI story pages one by one; the reader updates live as images land. */
-  const illustrateStory = async (story: Story, profile: KidProfile | null) => {
-    const character = characterSheet(profile);
-    const style = artStyleOf(profile).prompt;
+  const illustrateStory = async (story: Story, heroes: KidProfile[]) => {
+    const character = characterSheet(heroes);
+    const style = artStyleOf(heroes[0] ?? null).prompt;
     for (let index = 0; index < story.pages.length; index += 1) {
       const scene = story.pages[index].illustration;
       if (!scene) continue;
@@ -145,7 +155,8 @@ function App() {
     setMyStories((current) => [story, ...current]);
     goTo({ screen: "reader", storyId: story.id });
     if (story.pages.some((page) => page.illustration)) {
-      void illustrateStory(story, activeKid);
+      const heroes = kids.filter((kid) => story.kidIds?.includes(kid.id));
+      void illustrateStory(story, heroes.length > 0 ? heroes : activeKid ? [activeKid] : []);
     }
   };
 
@@ -199,7 +210,8 @@ function App() {
 
       {view.screen === "builder" && (
         <Builder
-          profile={activeKid}
+          kids={kids}
+          activeKid={activeKid}
           onCreate={createStory}
           onBack={() => goTo({ screen: "home" })}
         />
@@ -208,10 +220,13 @@ function App() {
       {view.screen === "reader" && readerStory && (
         <Reader
           story={readerStory}
-          profile={activeKid}
+          kids={kids}
+          activeKid={activeKid}
           onExit={() => goTo({ screen: "home" })}
         />
       )}
+
+      {!adultConfirmed && <AgeGate onConfirm={confirmAdult} />}
     </main>
   );
 }

@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { generateAiStory } from "../ai";
-import { heroName } from "../HeroText";
+import { Avatar } from "../Avatar";
 import type { KidProfile } from "../profile";
 import type { Story } from "../stories";
 import {
   buildStory,
   companionOptions,
   defaultSetup,
+  joinNames,
   lengthOptions,
   lessonOptions,
   placeOptions,
@@ -15,7 +16,8 @@ import {
 } from "../storyBuilder";
 
 interface BuilderProps {
-  profile: KidProfile | null;
+  kids: KidProfile[];
+  activeKid: KidProfile | null;
   onCreate: (story: Story) => void;
   onBack: () => void;
 }
@@ -52,25 +54,25 @@ function LoadingOverlay() {
   );
 }
 
-function Builder({ profile, onCreate, onBack }: BuilderProps) {
+function Builder({ kids, activeKid, onCreate, onBack }: BuilderProps) {
   const [setup, setSetup] = useState<StorySetup>(defaultSetup);
+  const [heroIds, setHeroIds] = useState<string[]>(activeKid ? [activeKid.id] : []);
   const [loading, setLoading] = useState(false);
   const [aiFailed, setAiFailed] = useState(false);
 
-  const makeStory = async () => {
-    setLoading(true);
-    setAiFailed(false);
-    try {
-      const story = await generateAiStory(setup, profile);
-      onCreate(story);
-    } catch {
-      setLoading(false);
-      setAiFailed(true);
-    }
-  };
-
-  const set = <K extends keyof StorySetup>(field: K, value: string) =>
+  const set = <K extends keyof StorySetup>(field: K, value: StorySetup[K]) =>
     setSetup((current) => ({ ...current, [field]: value }));
+
+  const toggleHero = (kidId: string) =>
+    setHeroIds((current) =>
+      current.includes(kidId)
+        ? current.length > 1
+          ? current.filter((id) => id !== kidId)
+          : current
+        : [...current, kidId],
+    );
+
+  const heroes = kids.filter((kid) => heroIds.includes(kid.id));
 
   const theme = themeOptions.find((option) => option.id === setup.themeId) ?? themeOptions[0];
   const companion =
@@ -78,6 +80,20 @@ function Builder({ profile, onCreate, onBack }: BuilderProps) {
   const place = placeOptions.find((option) => option.id === setup.placeId) ?? placeOptions[0];
   const lesson = lessonOptions.find((option) => option.id === setup.lessonId) ?? lessonOptions[0];
   const length = lengthOptions.find((option) => option.id === setup.lengthId) ?? lengthOptions[1];
+
+  const makeStory = async () => {
+    setLoading(true);
+    setAiFailed(false);
+    try {
+      const story = await generateAiStory(setup, heroes);
+      onCreate(story);
+    } catch {
+      setLoading(false);
+      setAiFailed(true);
+    }
+  };
+
+  const starring = heroes.length > 0 ? joinNames(heroes.map((kid) => kid.name)) : "Little Hero";
 
   return (
     <div className="builder" style={{ ["--accent" as string]: theme.accent }}>
@@ -88,6 +104,26 @@ function Builder({ profile, onCreate, onBack }: BuilderProps) {
         <span className="reader-title">Build a story</span>
         <span className="page-count" />
       </div>
+
+      {kids.length > 0 && (
+        <section className="builder-section">
+          <h2 className="picker-heading">Who is in this story?</h2>
+          <div className="chip-row">
+            {kids.map((kid) => (
+              <button
+                key={kid.id}
+                type="button"
+                className={heroIds.includes(kid.id) ? "hero-pick selected" : "hero-pick"}
+                onClick={() => toggleHero(kid.id)}
+                aria-pressed={heroIds.includes(kid.id)}
+              >
+                <Avatar profile={kid} size={44} />
+                <span>{kid.name}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="builder-section">
         <h2 className="picker-heading">What kind of story?</h2>
@@ -123,6 +159,19 @@ function Builder({ profile, onCreate, onBack }: BuilderProps) {
             </button>
           ))}
         </div>
+        {setup.companionId !== "none" && (
+          <label className="inline-field">
+            Companion's name <span className="optional-tag">optional</span>
+            <input
+              className="hero-input"
+              value={setup.companionName}
+              onChange={(event) => set("companionName", event.target.value)}
+              placeholder={`e.g. your real ${companion.label.toLowerCase()}'s name`}
+              maxLength={24}
+              autoComplete="off"
+            />
+          </label>
+        )}
       </section>
 
       <section className="builder-section">
@@ -180,14 +229,36 @@ function Builder({ profile, onCreate, onBack }: BuilderProps) {
         </div>
       </section>
 
+      <section className="builder-section">
+        <h2 className="picker-heading">
+          Anything else to include? <span className="optional-tag">optional</span>
+        </h2>
+        <textarea
+          className="extra-input"
+          value={setup.extra}
+          onChange={(event) => set("extra", event.target.value)}
+          placeholder="e.g. They love pancakes, grandma is visiting, the puppy lost its ball..."
+          rows={3}
+          maxLength={500}
+        />
+        <p className="picker-hint">Used in magic stories. Content rules always apply.</p>
+      </section>
+
       <div className="builder-summary">
         <p>
           A <strong>{length.label.toLowerCase()}</strong>{" "}
           <strong>{theme.label.toLowerCase()}</strong> at{" "}
-          <strong>{place.label.toLowerCase()}</strong> with a{" "}
-          <strong>{companion.label.toLowerCase()}</strong>, about{" "}
-          <strong>{lesson.label.toLowerCase()}</strong> &mdash; starring{" "}
-          <strong>{heroName(profile?.name ?? "")}</strong>.
+          <strong>{place.label.toLowerCase()}</strong>
+          {setup.companionId !== "none" && (
+            <>
+              {" "}
+              with <strong>
+                {setup.companionName.trim() || `a ${companion.label.toLowerCase()}`}
+              </strong>
+            </>
+          )}
+          , about <strong>{lesson.label.toLowerCase()}</strong> &mdash; starring{" "}
+          <strong>{starring}</strong>.
         </p>
 
         {aiFailed ? (
@@ -203,7 +274,7 @@ function Builder({ profile, onCreate, onBack }: BuilderProps) {
               <button
                 type="button"
                 className="nav-button primary"
-                onClick={() => onCreate(buildStory(setup, profile))}
+                onClick={() => onCreate(buildStory(setup, heroes))}
               >
                 Make instant story
               </button>
