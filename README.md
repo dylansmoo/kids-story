@@ -1,23 +1,21 @@
 # Little Hero Stories
 
-An MVP for a parent-guided kids story builder. The app gathers a few parent-approved details and
-creates a page-by-page illustrated story draft where the child is the hero.
+A simple MVP for a kids story app. The user picks from a small set of ready-made stories and reads
+them page by page. Built to start small, then add features along the way.
 
-## MVP scope
+## MVP scope (current)
 
-- Short parent intake for children under 7
-- No pronoun question
-- Parent values filter for classic, wholesome, non-political story output
-- Story themes such as bravery, kindness, responsibility, sharing, and imagination
-- Reading support modes for pre-readers, early readers, and parent read-alouds
-- Structured story pages with:
-  - page title
-  - page text
-  - read-together line
-  - illustration prompt
+- A small library of preset stories to choose from
+- A clean page-by-page reader (Back / Next)
+- Wholesome, classic, family-friendly content for kids under 7
+- Stories use a child-friendly hero without asking for pronouns
 
-The current MVP is intentionally client-side and deterministic. It is ready to be connected to a
-backend story/image generation service after the core product direction is validated.
+## Planned next
+
+- Personalizing stories with the child's name and favorites
+- More stories and themes
+- Saving favorites
+- Story generation later, once the core experience is right
 
 ## Run locally
 
